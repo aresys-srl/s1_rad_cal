@@ -10,18 +10,12 @@ from pathlib import Path
 
 import numpy as np
 from eo_products.sentinel1.reader import open_product, read_channel_metadata
-from perseo_core.geometry.angles import compute_look_angles
 from perseo_quality.radiometric_analysis.block_wise.core.radiometric_profiles import blocks_partitioning
 from sct_sentinel1_reader.protocol_implementation import Sentinel1ChannelManager
 
-from rad_cal import GETASSE_DEM_FOLDER
-from rad_cal.core.look_angles import compute_terrain_corrected_look_angles, load_dem_from_sar_times
 from rad_cal.corrections.abs_cal import compute_absolute_calibration_correction
-from rad_cal.corrections.ap_gain import (
-    compute_antenna_pattern_gain_from_metadata,
-    get_elevation_antenna_pattern_from_aux_cal,
-)
-from rad_cal.corrections.common import apply_roll_correction, get_aux_files
+from rad_cal.corrections.ap_gain import compute_eap_gain_correction
+from rad_cal.corrections.common import get_aux_files
 from rad_cal.corrections.proc_gain import compute_processing_gain_correction, get_aux_pp1_xml_path_from_product
 
 
@@ -88,56 +82,20 @@ def run(
                 cropping_size=cropping_size,
                 output_radiometric_quantity=channel_manager.radiometric_quantity,
             )
-            azimuth_times = channel_manager.azimuth_axis[
-                np.sum(az_block_size[:bc_num]) : np.sum(az_block_size[:bc_num]) + az_block_size[bc_num]
-            ]
-            burst_area_dem = load_dem_from_sar_times(
-                dem=GETASSE_DEM_FOLDER,
-                trajectory=channel_manager.trajectory,
-                range_times=channel_manager.range_axis,
-                azimuth_times=azimuth_times,
-                look_direction=channel_manager.looking_side.name.split("_")[0],
-            )
 
-            terrain_corrected_look_angles = compute_terrain_corrected_look_angles(
-                dem_values=burst_area_dem.values,
-                dem_lat_axis=burst_area_dem.lat.values,
-                dem_lon_axis=burst_area_dem.lon.values,
-                trajectory=channel_manager.trajectory,
-                range_times=channel_manager.range_axis,
-                azimuth_times=azimuth_times,
-                radians=False,
-            )
-            az_time = azimuth_times[az_block_size[bc_num] // 2]
-            block_look_angles = compute_look_angles(
-                trajectory=metadata.orbit,
-                azimuth_time=az_time,
-                range_times=channel_manager.range_axis,
-                look_direction=metadata.dataset_info.side_looking,
-                radians=False,
-            )
-            original_eap = compute_antenna_pattern_gain_from_metadata(
+            eap_gain_correction = compute_eap_gain_correction(
                 channel_metadata=metadata,
+                channel_manager=channel_manager,
                 swath=swath,
-                az_time=az_time,
-                look_angles_axis=block_look_angles,
+                polarization=pol,
+                aux_cal_xml_path=aux_cal_xml_path_new,
+                az_block_size=az_block_size,
+                bc_num=bc_num,
             )
-            antenna_pattern_id = (
-                np.ma.masked_greater(metadata.antenna_pattern[swath].time_axis - az_time, 0).astype(float).argmax()
-            )
-            roll = apply_roll_correction(
-                roll=metadata.antenna_pattern[swath].roll[antenna_pattern_id],
-                mission_id=metadata.general_info.mission_id,
-                az_time=az_time,
-            )
-            new_eap, new_look_angles = get_elevation_antenna_pattern_from_aux_cal(
-                xml_path=aux_cal_xml_path_new, swath=swath, polarization=pol, roll=roll
-            )
-            new_eap = np.interp(terrain_corrected_look_angles, new_look_angles, new_eap)
-            eap_gain_correction = original_eap - new_eap
 
             radiometric_correction = eap_gain_correction + abs_cal_correction + proc_gain_correction
             target_area_recal = 10 * np.log10(abs(target_area)) + radiometric_correction.T
+            print(target_area_recal.shape)
 
 
 if __name__ == "__main__":
