@@ -3,9 +3,9 @@
 
 """Module nox file for automating tasks"""
 
+import glob
 import os
 import shutil
-import glob
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -76,12 +76,12 @@ def pytest_executor(session: nox.Session, project: str) -> None:
         "python",
         "-m",
         "pytest",
-        f"--junitxml=_build/pytest-report-{nox_common.PLATFORM}-py{session.python}.xml",
-        f"--cov-report=xml:_build/pytest-coverage-{nox_common.PLATFORM}-py{session.python}.xml",
+        f"--junitxml=_build/pytest-report-{PLATFORM}-py{session.python}.xml",
+        f"--cov-report=xml:_build/pytest-coverage-{PLATFORM}-py{session.python}.xml",
     )
 
 
-@nox.session(python=nox_common.PY_VERSIONS)
+@nox.session(python=PY_VERSIONS)
 def pytest(session: nox.Session):
     """Module testing with pytest"""
     cwd = Path.cwd()
