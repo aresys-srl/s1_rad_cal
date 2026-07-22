@@ -66,3 +66,27 @@ def get_aux_files(
     aux_pp1_xml_path = [p for p in aux_pp1_path.joinpath("data").glob("*xml") if "aux-pp1" in p.name][0]
     aux_cal_xml_path = [p for p in aux_cal_path.joinpath("data").glob("*xml") if "aux-cal" in p.name][0]
     return (aux_cal_xml_path, aux_pp1_xml_path)
+
+
+def apply_roll_correction(roll: float, mission_id: str, az_time: PreciseDateTime) -> float:
+    """Apply a 30 milli-degrees correction to roll for S1D product if product data is before 2026/02/23
+
+    Parameters
+    ----------
+    roll : float
+        roll
+    mission_id : str
+        mission identifier, e.g. S1D
+    az_time : PreciseDateTime
+        azimuth time
+
+    Returns
+    -------
+    float
+        corrected roll
+    """
+    roll_data = PreciseDateTime.from_numeric_datetime(year=2026, month=2, day=23, hours=8, minutes=35)
+    if mission_id == "S1D" and az_time < roll_data:
+        return roll + 0.03
+    else:
+        return roll
