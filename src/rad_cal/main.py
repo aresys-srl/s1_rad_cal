@@ -8,9 +8,8 @@ Radiometric Re-Calibration Main Function
 
 from pathlib import Path
 
-import arepytools.io.metadata as mtd
 import numpy as np
-from arepytools.io import create_new_metadata, create_product_folder, write_metadata, write_raster_with_raster_info
+from arepytools.io import create_product_folder, write_metadata, write_raster_with_raster_info
 from eo_products.sentinel1.reader import (
     open_product,
     read_channel_calibration,
@@ -22,11 +21,17 @@ from rad_cal.corrections.abs_cal import compute_absolute_calibration_correction
 from rad_cal.corrections.ap_gain import compute_eap_gain_correction
 from rad_cal.corrections.common import get_aux_files
 from rad_cal.corrections.proc_gain import compute_processing_gain_correction, get_aux_pp1_xml_path_from_product
-from rad_cal.utils import compile_dataset_info
+from rad_cal.utils import create_pf_metadata
 
 
 def run(
-    l1_product_path: str | Path, aux_pp1_path_new: str | Path, aux_cal_path_new: str | Path, output_path: str | Path
+    l1_product_path: str | Path,
+    aux_pp1_path_new: str | Path,
+    aux_cal_path_new: str | Path,
+    output_path: str | Path,
+    apply_eap_correction: bool = True,
+    apply_processing_gain_correction: bool = True,
+    apply_absolute_calibration_correction: bool = True,
 ):
     l1_product_path = Path(l1_product_path)
     aux_pp1_path_new = Path(aux_pp1_path_new)
@@ -73,30 +78,8 @@ def run(
             blocks_centers_px = np.arange(az_block_size // 2, az_block_size * blocks_num, az_block_size).tolist()
             blocks_centers_px = [(px, mid_range_pixel) for px in blocks_centers_px]
 
-        pf_raster_info = mtd.RasterInfo(
-            lines=metadata.raster_info.lines.length,
-            samples=metadata.raster_info.samples.length,
-            celltype=metadata.raster_info.data_type,
-            filename=channel_raster_file.name,
-        )
-        pf_swath_info = mtd.SwathInfo(swath_i=swath, polarization_i=metadata.general_info.polarization.value)
-        pf_dataset_info = mtd.DataSetInfo(
-            acquisition_mode_i=metadata.dataset_info.acquisition_mode, image_quantity="BETA"
-        )
-        pf_dataset_info = compile_dataset_info(arepytools_dataset_info=pf_dataset_info, metadata=metadata)
-        pf_dataset_info.description = ""
-        pf_state_vector = mtd.StateVectors(
-            position_vector=metadata.state_vectors.positions,
-            velocity_vector=metadata.state_vectors.velocities,
-            t_ref_utc=metadata.state_vectors.time_axis[0],
-            dt_sv_s=metadata.state_vectors.time_axis[1] - metadata.state_vectors.time_axis[0],
-        )
-        pf_burst_info = mtd.BurstInfo()
-        pf_channel_mtd = create_new_metadata()
-        pf_channel_mtd.insert_element(pf_raster_info)
-        pf_channel_mtd.insert_element(pf_swath_info)
-        pf_channel_mtd.insert_element(pf_dataset_info)
-        pf_channel_mtd.insert_element(pf_state_vector)
+        pf_channel_mtd = create_pf_metadata(metadata=metadata, channel_raster_file=channel_raster_file, swath=swath)
+        pf_burst_info = pf_channel_mtd.get_burst_info()
 
         for bc_num, center in enumerate(blocks_centers_px):
             print(f"Processing block {bc_num + 1} of {blocks_num}")
@@ -115,46 +98,47 @@ def run(
                 raster_file=raster_file_path, block_to_read=target_block, scaling_conversion=scaling_factor
             )
 
-            eap_gain_correction = compute_eap_gain_correction(
-                channel_metadata=metadata,
-                swath=swath,
-                polarization=pol,
-                aux_cal_xml_path=aux_cal_xml_path_new,
-                az_block_size=az_block_size,
-                bc_num=bc_num,
-            )
+            if apply_eap_correction:
+                eap_gain_correction = compute_eap_gain_correction(
+                    channel_metadata=metadata,
+                    swath=swath,
+                    polarization=pol,
+                    aux_cal_xml_path=aux_cal_xml_path_new,
+                    az_block_size=az_block_size,
+                    bc_num=bc_num,
+                )
+            else:
+                eap_gain_correction = 1
 
-            proc_gain_correction = compute_processing_gain_correction(
-                aux_pp1_xml_path_new=aux_pp1_xml_path_new,
-                aux_pp1_xml_path_original=aux_pp1_xml_path_original,
-                swath=swath,
-                polarization=pol,
-            )
+            if apply_processing_gain_correction:
+                proc_gain_correction = compute_processing_gain_correction(
+                    aux_pp1_xml_path_new=aux_pp1_xml_path_new,
+                    aux_pp1_xml_path_original=aux_pp1_xml_path_original,
+                    swath=swath,
+                    polarization=pol,
+                )
+            else:
+                proc_gain_correction = 1
 
-            abs_cal_correction = compute_absolute_calibration_correction(
-                aux_cal_xml_path_new=aux_cal_xml_path_new, aux_cal_xml_path_original=cal_file
-            )
+            if apply_absolute_calibration_correction:
+                abs_cal_correction = compute_absolute_calibration_correction(
+                    aux_cal_xml_path_new=aux_cal_xml_path_new, aux_cal_xml_path_original=cal_file
+                )
+            else:
+                abs_cal_correction = 1
 
             radiometric_correction = eap_gain_correction * abs_cal_correction * proc_gain_correction
             target_area_recal = target_area * radiometric_correction
-            print(
-                "Target area mean amplitude [dB] = "
-                + f"{np.nanmean(20 * np.log10(np.where(abs(target_area) == 0, np.nan, abs(target_area))))}"
-            )
-            print(
-                "Target area re-calibrated mean amplitude [dB] = "
-                + f"{np.nanmean(20 * np.log10(np.where(abs(target_area_recal) == 0, np.nan, abs(target_area_recal))))}"
-            )
 
             pf_burst_info.add_burst(
                 range_start_time_i=range_axis[0],
-                azimuth_start_time_i=az_block_size * bc_num,
+                azimuth_start_time_i=azimuth_axis[az_block_size[bc_num] * bc_num],
                 lines_i=metadata.burst_info.lines_per_burst,
             )
             write_raster_with_raster_info(
                 raster_file=channel_raster_file,
                 data=target_area_recal,
-                raster_info=pf_raster_info,
+                raster_info=pf_channel_mtd.get_raster_info(),
                 start_point=(az_block_size[bc_num] * bc_num, 0),
             )
 
