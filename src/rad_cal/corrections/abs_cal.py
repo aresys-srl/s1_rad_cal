@@ -9,7 +9,6 @@ Absolute Calibration Constant
 from functools import lru_cache
 from pathlib import Path
 
-import numpy as np
 from lxml import etree
 
 
@@ -31,7 +30,7 @@ def compute_absolute_calibration_correction(aux_cal_xml_path_new: Path, aux_cal_
     """
     abs_cal_original = get_abs_cal_constant_from_cal_file(aux_cal_xml_path_original)
     abs_cal_new = get_abs_cal_constant_from_cal_file(aux_cal_xml_path_new)
-    return 10 * np.log10(abs_cal_original / abs_cal_new)
+    return abs_cal_original / abs_cal_new
 
 
 def get_abs_cal_constant_from_cal_file(aux_cal_xml_path: str | Path) -> dict:

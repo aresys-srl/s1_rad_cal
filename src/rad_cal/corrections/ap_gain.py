@@ -14,7 +14,6 @@ from eo_products.sentinel1.utilities import S1ChannelMetadata
 from lxml import etree
 from perseo_core.geometry.angles import compute_look_angles
 from perseo_core.timing.precise_datetime import PreciseDateTime
-from sct_sentinel1_reader.protocol_implementation import Sentinel1ChannelManager
 
 from rad_cal import GETASSE_DEM_FOLDER
 from rad_cal.core.look_angles import compute_terrain_corrected_look_angles, load_dem_from_sar_times
@@ -23,7 +22,6 @@ from rad_cal.corrections.common import apply_roll_correction
 
 def compute_eap_gain_correction(
     channel_metadata: S1ChannelMetadata,
-    channel_manager: Sentinel1ChannelManager,
     swath: str,
     polarization: str,
     aux_cal_xml_path: Path | str,
@@ -36,8 +34,6 @@ def compute_eap_gain_correction(
     ----------
     channel_metadata : S1ChannelMetadata
         S1ChannelMetadata object
-    channel_manager : Sentinel1ChannelManager
-        Sentinel1ChannelManager object
     swath : str
         swath name
     polarization : str
@@ -54,25 +50,25 @@ def compute_eap_gain_correction(
     npt.NDArray[np.floating]
         elevation antenna pattern gain correction [dB]
     """
-
     aux_cal_xml_path = Path(aux_cal_xml_path)
-    azimuth_times = channel_manager.azimuth_axis[
-        np.sum(az_block_size[:bc_num]) : np.sum(az_block_size[:bc_num]) + az_block_size[bc_num]
+    azimuth_times = channel_metadata.raster_info.lines.axis[
+        int(np.sum(az_block_size[:bc_num])) : int(np.sum(az_block_size[:bc_num]) + az_block_size[bc_num])
     ]
+    range_axis = channel_metadata.raster_info.samples.axis
     burst_area_dem = load_dem_from_sar_times(
         dem=GETASSE_DEM_FOLDER,
-        trajectory=channel_manager.trajectory,
-        range_times=channel_manager.range_axis,
+        trajectory=channel_metadata.orbit,
+        range_times=range_axis,
         azimuth_times=azimuth_times,
-        look_direction=channel_manager.looking_side.name.split("_")[0],
+        look_direction=channel_metadata.dataset_info.side_looking,
     )
 
     terrain_corrected_look_angles = compute_terrain_corrected_look_angles(
         dem_values=burst_area_dem.values,
         dem_lat_axis=burst_area_dem.lat.values,
         dem_lon_axis=burst_area_dem.lon.values,
-        trajectory=channel_manager.trajectory,
-        range_times=channel_manager.range_axis,
+        trajectory=channel_metadata.orbit,
+        range_times=range_axis,
         azimuth_times=azimuth_times,
         radians=False,
     )
@@ -80,7 +76,7 @@ def compute_eap_gain_correction(
     block_look_angles = compute_look_angles(
         trajectory=channel_metadata.orbit,
         azimuth_time=az_time,
-        range_times=channel_manager.range_axis,
+        range_times=range_axis,
         look_direction=channel_metadata.dataset_info.side_looking,
         radians=False,
     )
@@ -102,9 +98,12 @@ def compute_eap_gain_correction(
         xml_path=aux_cal_xml_path, swath=swath, polarization=polarization, roll=roll
     )
     new_eap = np.interp(terrain_corrected_look_angles, new_look_angles, new_eap)
-    eap_gain_correction = original_eap - new_eap
+    eap_correction_raw = original_eap / new_eap
 
-    return eap_gain_correction
+    eap_correction_abs = np.sqrt(abs(eap_correction_raw))
+    eap_correction_phase = np.angle(eap_correction_raw)
+
+    return eap_correction_abs * np.exp(1j * eap_correction_phase)
 
 
 def compute_antenna_pattern_gain_from_metadata(
@@ -140,7 +139,8 @@ def compute_antenna_pattern_gain_from_metadata(
         channel_metadata.antenna_pattern[swath].elevation_angle_array[antenna_pattern_id],
         antenna_pattern,
     )
-    return 10 * np.log10(abs(antenna_pattern_reinterp))
+    return antenna_pattern_reinterp
+    # return 20 * np.log10(abs(antenna_pattern_reinterp))
 
 
 def get_elevation_antenna_pattern_from_aux_cal(
@@ -182,4 +182,5 @@ def get_elevation_antenna_pattern_from_aux_cal(
 
             eap_complex = eap_real + 1j * eap_imag
 
-    return 10 * np.log10(abs(eap_complex)), elevation_angles + roll
+    return eap_complex, elevation_angles + roll
+    # return 20 * np.log10(abs(eap_complex)), elevation_angles + roll

@@ -45,7 +45,7 @@ def compute_processing_gain_correction(
         xml_path=aux_pp1_xml_path_original, swath=swath, polarization=polarization
     )
 
-    return proc_gain_new - proc_gain_original
+    return proc_gain_new / proc_gain_original
 
 
 def get_processing_gain_from_aux_pp1(xml_path: str | Path, swath: str, polarization: str) -> float:
@@ -65,13 +65,11 @@ def get_processing_gain_from_aux_pp1(xml_path: str | Path, swath: str, polarizat
     float
         processing gain [dB]
     """
-    # loading the xml file
     root = etree.parse(Path(xml_path)).getroot()
     for item in root.findall(".//slcProcParams/swathParamsList/swathParams"):
         sw = item.find("swath").text
         if sw == swath:
             gains = np.array(item.find("gain").text.split(" "), dtype=float)
-            gains = 20 * np.log10(gains)
             if polarization == "HH":
                 return gains[0]
             if polarization == "HV":
