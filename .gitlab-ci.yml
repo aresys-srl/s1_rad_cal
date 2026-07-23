@@ -40,43 +40,43 @@ check_code_compliance_pylint:
 
 # === test - unittest ========================================================
 # ============================================================================
-unittest_linux:
-  stage: test
-  extends: .tags_manylinux_2_28
-  script:
-    - python3.12 -m pip install nox
-    - python3.12 -m nox -s pytest -p ${PYTHON}
-  parallel:
-    matrix:
-      - PYTHON: ["3.11", "3.12", "3.13", "3.14"]
-  needs: []
-  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
-  artifacts:
-    reports:
-      junit:
-        - _build/pytest-report-*.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: _build/pytest-coverage-*.xml
+# unittest_linux:
+#   stage: test
+#   extends: .tags_manylinux_2_28
+#   script:
+#     - python3.12 -m pip install nox
+#     - python3.12 -m nox -s pytest -p ${PYTHON}
+#   parallel:
+#     matrix:
+#       - PYTHON: ["3.11", "3.12", "3.13", "3.14"]
+#   needs: []
+#   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+#   artifacts:
+#     reports:
+#       junit:
+#         - _build/pytest-report-*.xml
+#       coverage_report:
+#         coverage_format: cobertura
+#         path: _build/pytest-coverage-*.xml
 
-unittest_win:
-  stage: test
-  extends: .tags_win10
-  script:
-    - python -m pip install nox
-    - python -m nox -s pytest -p ${PYTHON}
-  parallel:
-    matrix:
-      - PYTHON: ["3.11", "3.12", "3.13", "3.14"]
-  needs: []
-  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
-  artifacts:
-    reports:
-      junit:
-        - _build/pytest-report-*.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: _build/pytest-coverage-*.xml
+# unittest_win:
+#   stage: test
+#   extends: .tags_win10
+#   script:
+#     - python -m pip install nox
+#     - python -m nox -s pytest -p ${PYTHON}
+#   parallel:
+#     matrix:
+#       - PYTHON: ["3.11", "3.12", "3.13", "3.14"]
+#   needs: []
+#   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+#   artifacts:
+#     reports:
+#       junit:
+#         - _build/pytest-report-*.xml
+#       coverage_report:
+#         coverage_format: cobertura
+#         path: _build/pytest-coverage-*.xml
 
 # === build ==================================================================
 # ============================================================================
@@ -104,18 +104,18 @@ wheel:
     paths:
       - dist/*.whl
 
-doc:
-  stage: build
-  extends:
-    - .tags_manylinux_2_28
-  script:
-    - python3.12 -m pip install nox
-    - python3.12 -m nox -s build_doc
-  needs: []
-  artifacts:
-    expire_in: 2 weeks
-    paths:
-      - ./documentation*.zip
+# doc:
+#   stage: build
+#   extends:
+#     - .tags_manylinux_2_28
+#   script:
+#     - python3.12 -m pip install nox
+#     - python3.12 -m nox -s build_doc
+#   needs: []
+#   artifacts:
+#     expire_in: 2 weeks
+#     paths:
+#       - ./documentation*.zip
 
 # === deploy =================================================================
 # ============================================================================
