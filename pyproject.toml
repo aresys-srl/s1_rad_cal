@@ -5,7 +5,7 @@ authors = [{ name = "Aresys S.R.L.", email = "info@aresys.it" }]
 requires-python = ">=3.11"
 readme = "README.md"
 license = { file = "LICENSE.txt" }
-dependencies = ["eo_products>=1.1.0", "perseo_core", "perseo_quality", "scipy", "numpy", "xarray", "sct_sentinel1_reader",]
+dependencies = ["eo_products>=1.1.0", "perseo_core", "scipy", "numpy", "xarray", "arepytools"]
 dynamic = ["version"]
 classifiers = [
     "Development Status :: 3 - Alpha",
