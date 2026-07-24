@@ -183,4 +183,3 @@ def get_elevation_antenna_pattern_from_aux_cal(
             eap_complex = eap_real + 1j * eap_imag
 
     return eap_complex, elevation_angles + roll
-    # return 20 * np.log10(abs(eap_complex)), elevation_angles + roll
