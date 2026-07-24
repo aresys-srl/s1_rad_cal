@@ -7,8 +7,8 @@
 # ============================================================================
 
 [project]
-site_name = "{{project_name}}"
-site_description = "{{description}}."
+site_name = "Radiometric Re-Calibration"
+site_description = "Rad-Cal Tool Documentation"
 site_author = "Aresys s.r.l."
 site_url = ""
 copyright = """
