@@ -268,7 +268,7 @@ def _compute_footprint_from_times(
             range_times[-1] + RANGE_MARGIN_SEC,
         ],
         altitude=0.0,
-        doppler_frequencies=0.0,
+        doppler_frequencies=doppler_frequency,
         wavelength=wavelength,
         look_direction=look_direction,
     )
