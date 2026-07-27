@@ -19,6 +19,7 @@ from eo_products.sentinel1.reader import (
     read_channel_metadata,
 )
 
+from rad_cal.config import Config
 from rad_cal.corrections.abs_cal import compute_absolute_calibration_correction
 from rad_cal.corrections.ap_gain import compute_eap_gain_correction
 from rad_cal.corrections.common import get_aux_files
@@ -28,19 +29,11 @@ from rad_cal.utils import create_pf_metadata
 logger = logging.getLogger(__name__)
 
 
-def run(
-    l1_product_path: str | Path,
-    aux_pp1_path_new: str | Path,
-    aux_cal_path_new: str | Path,
-    output_path: str | Path,
-    apply_eap_correction: bool = True,
-    apply_processing_gain_correction: bool = True,
-    apply_absolute_calibration_correction: bool = True,
-):
-    l1_product_path = Path(l1_product_path)
-    aux_pp1_path_new = Path(aux_pp1_path_new)
-    aux_cal_path_new = Path(aux_cal_path_new)
-    output_path = Path(output_path)
+def run(config: Config):
+    l1_product_path = Path(config.l1_product)
+    aux_pp1_path_new = Path(config.aux_pp1)
+    aux_cal_path_new = Path(config.aux_cal)
+    output_path = Path(config.output)
 
     logging.basicConfig(
         level=logging.INFO,
@@ -51,15 +44,15 @@ def run(
             logging.StreamHandler(sys.stdout),
         ],
     )
-    if not (apply_eap_correction or apply_processing_gain_correction or apply_absolute_calibration_correction):
+    if not (config.corrections.eap or config.corrections.processing_gain or config.corrections.absolute_calibration):
         raise ValueError("No corrections selected, aborting...")
 
     summary = f"""
     Selected corrections
     --------------------
-    - Elevation antenna pattern gain        : {"ON" if apply_eap_correction else "OFF"}
-    - Absolute calibration factor           : {"ON" if apply_absolute_calibration_correction else "OFF"}
-    - Processing gain                       : {"ON" if apply_processing_gain_correction else "OFF"}
+    - Elevation antenna pattern gain        : {"ON" if config.corrections.eap else "OFF"}
+    - Absolute calibration factor           : {"ON" if config.corrections.absolute_calibration else "OFF"}
+    - Processing gain                       : {"ON" if config.corrections.processing_gain else "OFF"}
     """
     logger.info(summary)
 
@@ -122,7 +115,7 @@ def run(
                 raster_file=raster_file_path, block_to_read=target_block, scaling_conversion=scaling_factor
             )
 
-            if apply_eap_correction:
+            if config.corrections.eap:
                 eap_gain_correction = compute_eap_gain_correction(
                     channel_metadata=metadata,
                     swath=swath,
@@ -134,7 +127,7 @@ def run(
             else:
                 eap_gain_correction = 1
 
-            if apply_processing_gain_correction:
+            if config.corrections.processing_gain:
                 proc_gain_correction = compute_processing_gain_correction(
                     aux_pp1_xml_path_new=aux_pp1_xml_path_new,
                     aux_pp1_xml_path_original=aux_pp1_xml_path_original,
@@ -144,7 +137,7 @@ def run(
             else:
                 proc_gain_correction = 1
 
-            if apply_absolute_calibration_correction:
+            if config.corrections.absolute_calibration:
                 abs_cal_correction = compute_absolute_calibration_correction(
                     aux_cal_xml_path_new=aux_cal_xml_path_new, aux_cal_xml_path_original=cal_file
                 )
