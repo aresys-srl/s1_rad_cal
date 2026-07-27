@@ -5,7 +5,7 @@ authors = [{ name = "Aresys S.R.L.", email = "info@aresys.it" }]
 requires-python = ">=3.11"
 readme = "README.md"
 license = { file = "LICENSE.txt" }
-dependencies = ["eo_products>=1.1.0", "perseo_core", "scipy", "numpy", "xarray", "arepytools"]
+dependencies = ["eo_products>=1.1.0", "perseo_core", "scipy", "numpy", "xarray", "arepytools", "typer"]
 dynamic = ["version"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -28,7 +28,8 @@ dev = ["ruff", "pylint"]
 test = ["pytest", "pytest-cov"]
 docs = ["zensical", "mkdocstrings-python"]
 
-
+[project.scripts]
+rad-cal = "rad_cal.cli:app"
 
 
 [build-system]
