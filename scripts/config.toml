@@ -1,0 +1,12 @@
+[input]
+l1_product = "C:/Users/marco.spadoni/Downloads/S1C_IW_SLC__1SSV_20260625T083150_20260625T083221_008259_01054C_3F3E.SAFE"
+aux_pp1 = "C:/Users/marco.spadoni/Downloads/S1D_AUX_PP1_V20260319T000000_G20260603T073733.SAFE"
+aux_cal = "C:/Users/marco.spadoni/Downloads/S1D_AUX_CAL_V20260319T000000_G20260603T113322.SAFE"
+
+[output]
+directory = "C:/Users/marco.spadoni/Downloads"
+
+[corrections]
+eap = true
+processing_gain = true
+absolute_calibration = true
