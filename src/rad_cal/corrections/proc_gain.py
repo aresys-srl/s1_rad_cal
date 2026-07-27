@@ -6,6 +6,7 @@ Processing Gain
 ---------------
 """
 
+import logging
 from functools import lru_cache
 from pathlib import Path
 
@@ -13,6 +14,8 @@ import numpy as np
 from lxml import etree
 
 from rad_cal import AUX_PP1_DATASET
+
+logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=20)
@@ -112,7 +115,7 @@ def get_aux_pp1_xml_path_from_product(path_to_product: str | Path) -> Path:
             raise FileNotFoundError("AUX_PP1 association failed: none or more than one xml files were found!")
         else:
             xml_file = xml_files[0]
-            print("Associated AUX_PP1 file: {}".format(xml_file))
+            logger.debug("Associated AUX_PP1 file: {}".format(xml_file))
             return Path(xml_file)
     else:
         raise FileNotFoundError("AUX_PP1 association failed!")

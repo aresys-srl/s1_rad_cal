@@ -6,6 +6,8 @@ Radiometric Re-Calibration Main Function
 ----------------------------------------
 """
 
+import logging
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -23,6 +25,8 @@ from rad_cal.corrections.common import get_aux_files
 from rad_cal.corrections.proc_gain import compute_processing_gain_correction, get_aux_pp1_xml_path_from_product
 from rad_cal.utils import create_pf_metadata
 
+logger = logging.getLogger(__name__)
+
 
 def run(
     l1_product_path: str | Path,
@@ -38,6 +42,27 @@ def run(
     aux_cal_path_new = Path(aux_cal_path_new)
     output_path = Path(output_path)
 
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)-8s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[
+            logging.FileHandler(output_path / "rad_cal.log"),
+            logging.StreamHandler(sys.stdout),
+        ],
+    )
+    if not (apply_eap_correction or apply_processing_gain_correction or apply_absolute_calibration_correction):
+        raise ValueError("No corrections selected, aborting...")
+
+    summary = f"""
+    Selected corrections
+    --------------------
+    - Elevation antenna pattern gain        : {"ON" if apply_eap_correction else "OFF"}
+    - Absolute calibration factor           : {"ON" if apply_absolute_calibration_correction else "OFF"}
+    - Processing gain                       : {"ON" if apply_processing_gain_correction else "OFF"}
+    """
+    logger.info(summary)
+
     prod = open_product(l1_product_path)
     aux_cal_xml_path_new, aux_pp1_xml_path_new = get_aux_files(
         l1_product_path=l1_product_path,
@@ -49,7 +74,7 @@ def run(
     pf_name = output_path.joinpath("PF")
     prod_folder = create_product_folder(pf_path=pf_name, overwrite_ok=True)
     for ch_id, channel in enumerate(prod.channels_list, start=1):
-        print(f"Processing channel {channel}")
+        logger.info(f"Processing channel {channel}")
         channel_raster_file = prod_folder.get_channel_data(channel=ch_id)
         metadata_file, raster_file_path, cal_file, noise_path = prod.get_files_from_channel_name(channel)
         scaling_factor = read_channel_calibration(xml_path=cal_file)
@@ -82,8 +107,7 @@ def run(
         pf_burst_info = pf_channel_mtd.get_burst_info()
 
         for bc_num, center in enumerate(blocks_centers_px):
-            print(f"Processing block {bc_num + 1} of {blocks_num}")
-
+            logger.info(f"Processing block {bc_num + 1} of {blocks_num}")
             cropping_size = (
                 range_axis.size,  # range
                 az_block_size[bc_num],  # azimuth
