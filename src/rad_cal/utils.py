@@ -68,7 +68,6 @@ def create_pf_metadata(metadata: S1ChannelMetadata, channel_raster_file: Path, s
         polarization_i=metadata.general_info.polarization.value,
         acquisition_prf_i=metadata.swath_info.prf,
     )
-    # TODO: fix this
     pf_swath_info.acquisition_start_time = att.PreciseDateTime.from_sec85(metadata.general_info.start_time.sec85)
     acq_mode = (
         "TOPSAR" if metadata.dataset_info.acquisition_mode in ["EW", "IW"] else metadata.dataset_info.acquisition_mode
@@ -88,12 +87,19 @@ def create_pf_metadata(metadata: S1ChannelMetadata, channel_raster_file: Path, s
         baz_hz_i=metadata.sampling_constants.azimuth_bandwidth_freq_hz,
     )
     pf_burst_info = mtd.BurstInfo()
-    for burst_id in range(metadata.burst_info.num):
+    if metadata.burst_info.num == 1:
         pf_burst_info.add_burst(
-            range_start_time_i=metadata.burst_info.range_start_times[burst_id],
-            azimuth_start_time_i=metadata.burst_info.azimuth_start_times[burst_id],
+            range_start_time_i=metadata.burst_info.range_start_times,
+            azimuth_start_time_i=metadata.burst_info.azimuth_start_times,
             lines_i=metadata.burst_info.lines_per_burst,
         )
+    else:
+        for burst_id in range(metadata.burst_info.num):
+            pf_burst_info.add_burst(
+                range_start_time_i=metadata.burst_info.range_start_times[burst_id],
+                azimuth_start_time_i=metadata.burst_info.azimuth_start_times[burst_id],
+                lines_i=metadata.burst_info.lines_per_burst,
+            )
 
     pf_channel_mtd = create_new_metadata()
     pf_channel_mtd.insert_element(pf_raster_info)

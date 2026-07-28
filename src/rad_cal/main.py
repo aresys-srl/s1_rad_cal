@@ -95,6 +95,7 @@ def run(config: Config):
             blocks_num = int(np.floor(azimuth_axis.size / az_block_size))
             blocks_centers_px = np.arange(az_block_size // 2, az_block_size * blocks_num, az_block_size).tolist()
             blocks_centers_px = [(px, mid_range_pixel) for px in blocks_centers_px]
+            az_block_size = [az_block_size] * blocks_num
 
         pf_channel_mtd = create_pf_metadata(metadata=metadata, channel_raster_file=channel_raster_file, swath=swath)
 
