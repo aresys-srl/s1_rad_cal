@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+import arepytools.timing.precisedatetime as att
 import numpy as np
 import pytest
 from arepytools.io import metadata as mtd
@@ -19,9 +20,7 @@ class TestCompileDatasetInfo:
                 mission_id="S1A",
             ),
             dataset_info=SimpleNamespace(
-                image_type="SLC",
-                projection="GROUND_RANGE",
-                side_looking=ESideLooking.right_looking,
+                image_type="SLC", projection="GROUND_RANGE", side_looking=ESideLooking.right_looking, fc_hz=0.0
             ),
         )
 
@@ -52,12 +51,8 @@ class TestCreatePfMetadata:
     def fake_metadata(self):
         return SimpleNamespace(
             raster_info=SimpleNamespace(
-                lines=SimpleNamespace(
-                    length=100,
-                ),
-                samples=SimpleNamespace(
-                    length=200,
-                ),
+                lines=SimpleNamespace(length=100, start=att.PreciseDateTime(), step=1),
+                samples=SimpleNamespace(length=200, start=0, step=1),
                 data_type="FLOAT32",
             ),
             general_info=SimpleNamespace(
@@ -65,12 +60,31 @@ class TestCreatePfMetadata:
                     value=EPolarization.vv,
                 ),
                 mission_id="S1A",
+                product_type=SimpleNamespace(value="SLC"),
+                start_time=att.PreciseDateTime(),
             ),
             dataset_info=SimpleNamespace(
                 acquisition_mode="IW",
                 image_type="SLC",
                 projection="GROUND_RANGE",
                 side_looking=ESideLooking.right_looking,
+                fc_hz=0.0,
+            ),
+            sampling_constants=SimpleNamespace(
+                range_freq_hz=0.0,
+                range_bandwidth_freq_hz=0.0,
+                azimuth_freq_hz=0.0,
+                azimuth_bandwidth_freq_hz=0.0,
+            ),
+            swath_info=SimpleNamespace(
+                acquisition_start_time=att.PreciseDateTime(),
+                prf=0.0,
+            ),
+            burst_info=SimpleNamespace(
+                num=4,
+                range_start_times=np.zeros(4),
+                azimuth_start_times=np.zeros(4),
+                lines_per_burst=10,
             ),
             state_vectors=SimpleNamespace(
                 positions=np.array(

@@ -97,7 +97,6 @@ def run(config: Config):
             blocks_centers_px = [(px, mid_range_pixel) for px in blocks_centers_px]
 
         pf_channel_mtd = create_pf_metadata(metadata=metadata, channel_raster_file=channel_raster_file, swath=swath)
-        pf_burst_info = pf_channel_mtd.get_burst_info()
 
         for bc_num, center in enumerate(blocks_centers_px):
             logger.info(f"Processing block {bc_num + 1} of {blocks_num}")
@@ -147,17 +146,10 @@ def run(config: Config):
             radiometric_correction = eap_gain_correction * abs_cal_correction * proc_gain_correction
             target_area_recal = target_area * radiometric_correction
 
-            pf_burst_info.add_burst(
-                range_start_time_i=range_axis[0],
-                azimuth_start_time_i=azimuth_axis[az_block_size[bc_num] * bc_num],
-                lines_i=metadata.burst_info.lines_per_burst,
-            )
             write_raster_with_raster_info(
                 raster_file=channel_raster_file,
                 data=target_area_recal,
                 raster_info=pf_channel_mtd.get_raster_info(),
                 start_point=(az_block_size[bc_num] * bc_num, 0),
             )
-
-        pf_channel_mtd.insert_element(pf_burst_info)
         write_metadata(pf_channel_mtd, metadata_file=prod_folder.get_channel_metadata(channel=ch_id))
