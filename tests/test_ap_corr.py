@@ -33,7 +33,7 @@ def create_aux_cal(path: Path):
 
 
 def test_get_elevation_antenna_pattern_from_aux_cal(tmp_path):
-    xml = tmp_path / "aux.xml"
+    xml = tmp_path / "aux_cal.xml"
     create_aux_cal(xml)
 
     eap, angles = get_elevation_antenna_pattern_from_aux_cal(
