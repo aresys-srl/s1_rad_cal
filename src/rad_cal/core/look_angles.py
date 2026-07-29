@@ -218,7 +218,7 @@ def _look_angles_from_ecef_positions(
 
 def _compute_footprint_from_times(
     range_times: npt.NDArray[np.floating],
-    azimuth_times: npt.NDArray[np.floating],
+    azimuth_times: npt.NDArray,
     trajectory: Trajectory,
     wavelength: float,
     doppler_frequency: float,
@@ -244,7 +244,7 @@ def _compute_footprint_from_times(
     Returns
     -------
     tuple[float, float, float, float]
-        footprint as (``min_lat``, ``min_lon``, ``max_lat``, ``max_lon``) expressed in degrees
+        footprint as (``lat_start``, ``lon_start``, ``lat_size``, ``lon_size``) expressed in degrees
     """
     footprint_ecef = direct_geocoding_monostatic(
         sensor_positions=trajectory.position(
@@ -273,19 +273,54 @@ def _compute_footprint_from_times(
         look_direction=look_direction,
     )
     footprint_vertices = np.rad2deg(xyz2llh(np.vstack((footprint_ecef[0], footprint_ecef[1])))[:, 0:2])
-    return (
-        np.min(footprint_vertices[:, 0]),
-        np.min(footprint_vertices[:, 1]),
-        np.max(footprint_vertices[:, 0]),
-        np.max(footprint_vertices[:, 1]),
+    min_lat = np.min(footprint_vertices[:, 0])
+    max_lat = np.max(footprint_vertices[:, 0])
+
+    lon_start, lon_size = _antimeridian_safe_lon_bounds(
+        lon_a_deg=footprint_vertices[0, 1], lon_b_deg=footprint_vertices[1, 1]
     )
+
+    return (
+        min_lat,
+        lon_start,
+        max_lat - min_lat,
+        lon_size,
+    )
+
+
+def _antimeridian_safe_lon_bounds(lon_a_deg: float, lon_b_deg: float) -> tuple[float, float]:
+    """Compute (lon_start, lon_size) for two footprint-edge longitudes, correctly
+    handling the case where they straddle the antimeridian.
+
+    Parameters
+    ----------
+    lon_a_deg : float
+        First longitude, degrees.
+    lon_b_deg : float
+        Second longitude, degrees.
+
+    Returns
+    -------
+    tuple[float, float]
+        (lon_start, lon_size) in degrees. lon_start is in [-180, 180) and
+        lon_size >= 0; lon_start + lon_size may exceed 180 deg, which is the
+        convention get_dem_roi expects to indicate antimeridian crossing.
+    """
+    lon_low, lon_high = sorted((lon_a_deg, lon_b_deg))
+    direct_size = lon_high - lon_low
+    wrap_size = 360 - direct_size
+
+    if direct_size < wrap_size:
+        return lon_low, direct_size
+    else:
+        return lon_high, wrap_size
 
 
 def load_dem_from_sar_times(
     dem: Path | str,
     trajectory: Trajectory,
     range_times: npt.NDArray[np.floating],
-    azimuth_times: npt.NDArray[np.floating],
+    azimuth_times: npt.NDArray,
     look_direction: SensorLookDirection,
     wavelength: float = 1.0,
     doppler_frequency: float = 0.0,
@@ -305,8 +340,8 @@ def load_dem_from_sar_times(
     look_direction : SensorLookDirection
         sensor side looking
     wavelength : float, optional
-        carrier signal wavelength, dy default 1
-    doppler_frequency: float, optional
+        carrier signal wavelength, by default 1
+    doppler_frequency : float, optional
         doppler frequency [Hz], by default 0
 
 
@@ -327,8 +362,8 @@ def load_dem_from_sar_times(
     dem_area = get_dem_roi(
         lat_start_deg=footprint[0],
         lon_start_deg=footprint[1],
-        lat_size_deg=abs(footprint[2] - footprint[0]),
-        lon_size_deg=abs(footprint[3] - footprint[1]),
+        lat_size_deg=footprint[2],
+        lon_size_deg=footprint[3],
         dem=dem,
     )
     return dem_area

@@ -10,6 +10,7 @@ import pytest
 
 import rad_cal.core.look_angles as look_angles
 from rad_cal.core.look_angles import (
+    _antimeridian_safe_lon_bounds,
     _compute_footprint_from_times,
     _look_angles_from_ecef_positions,
     compute_terrain_corrected_look_angles,
@@ -279,8 +280,8 @@ class TestComputeFootprintFromTimes:
             look_direction="RIGHT",
         )
 
-        min_lat, min_lon, max_lat, max_lon = footprint
-        np.testing.assert_allclose([min_lat, min_lon, max_lat, max_lon], [10.0, 20.0, 15.0, 25.0])
+        start_lat, start_lon, size_lat, size_lon = footprint
+        np.testing.assert_allclose([start_lat, start_lon, size_lat, size_lon], [10.0, 20.0, 5.0, 5.0])
 
         # azimuth margin applied on both ends before calling trajectory.position/velocity
         expected_az = np.array(
@@ -307,7 +308,7 @@ class TestLoadDemFromSarTimes:
         monkeypatch.setattr(
             look_angles,
             "_compute_footprint_from_times",
-            lambda **kwargs: (10.0, 20.0, 15.0, 26.0),  # min_lat, min_lon, max_lat, max_lon
+            lambda **kwargs: (10.0, 179.0, 5.0, 6.0),  # start_lat, start_lon, size_lat, size_lon
         )
 
         captured = {}
@@ -329,7 +330,7 @@ class TestLoadDemFromSarTimes:
 
         assert result is sentinel_dem
         assert captured["lat_start_deg"] == 10.0
-        assert captured["lon_start_deg"] == 20.0
+        assert captured["lon_start_deg"] == 179.0
         assert captured["lat_size_deg"] == pytest.approx(5.0)
         assert captured["lon_size_deg"] == pytest.approx(6.0)
         assert captured["dem"] == Path(str(tmp_path / "dem_tiles"))
@@ -356,3 +357,61 @@ class TestLoadDemFromSarTimes:
         )
 
         assert captured["dem"] == tmp_path
+
+
+class TestAntimeridianSafeLonBounds:
+    def test_no_crossing_positive_lons(self):
+        lon_start, lon_size = _antimeridian_safe_lon_bounds(lon_a_deg=10.0, lon_b_deg=12.0)
+        assert lon_start == pytest.approx(10.0)
+        assert lon_size == pytest.approx(2.0)
+
+    def test_no_crossing_negative_lons(self):
+        lon_start, lon_size = _antimeridian_safe_lon_bounds(lon_a_deg=-50.0, lon_b_deg=-40.0)
+        assert lon_start == pytest.approx(-50.0)
+        assert lon_size == pytest.approx(10.0)
+
+    def test_no_crossing_straddling_prime_meridian(self):
+        # crosses lon=0 but not the antimeridian -> should NOT be treated as wraparound
+        lon_start, lon_size = _antimeridian_safe_lon_bounds(lon_a_deg=-5.0, lon_b_deg=5.0)
+        assert lon_start == pytest.approx(-5.0)
+        assert lon_size == pytest.approx(10.0)
+
+    def test_crossing_antimeridian_matches_get_dem_roi_example(self):
+        # mirrors the get_dem_roi(lon=179, lon_size=2) example from the review
+        lon_start, lon_size = _antimeridian_safe_lon_bounds(lon_a_deg=179.0, lon_b_deg=-179.0)
+        assert lon_start == pytest.approx(179.0)
+        assert lon_size == pytest.approx(2.0)
+
+    def test_crossing_is_order_independent(self):
+        result_ab = _antimeridian_safe_lon_bounds(lon_a_deg=179.0, lon_b_deg=-179.0)
+        result_ba = _antimeridian_safe_lon_bounds(lon_a_deg=-179.0, lon_b_deg=179.0)
+        assert result_ab == pytest.approx(result_ba)
+
+    def test_no_crossing_is_order_independent(self):
+        result_ab = _antimeridian_safe_lon_bounds(lon_a_deg=10.0, lon_b_deg=12.0)
+        result_ba = _antimeridian_safe_lon_bounds(lon_a_deg=12.0, lon_b_deg=10.0)
+        assert result_ab == pytest.approx(result_ba)
+
+    def test_identical_lons_returns_zero_size(self):
+        lon_start, lon_size = _antimeridian_safe_lon_bounds(lon_a_deg=42.0, lon_b_deg=42.0)
+        assert lon_start == pytest.approx(42.0)
+        assert lon_size == pytest.approx(0.0)
+
+    def test_wide_crossing_near_antimeridian(self):
+        # larger gap across the seam: e.g. 170 and -170 -> wrap arc is 20 deg
+        lon_start, lon_size = _antimeridian_safe_lon_bounds(lon_a_deg=170.0, lon_b_deg=-170.0)
+        assert lon_start == pytest.approx(170.0)
+        assert lon_size == pytest.approx(20.0)
+
+    def test_antipodal_tie_does_not_raise(self):
+        # direct_size == wrap_size == 180 -> tie-break branch; just check it's self-consistent
+        lon_start, lon_size = _antimeridian_safe_lon_bounds(lon_a_deg=0.0, lon_b_deg=180.0)
+        assert lon_size == pytest.approx(180.0)
+        assert lon_start in (0.0, 180.0)
+
+    def test_result_reconstructs_the_shorter_arc(self):
+        # sanity check: lon_start + lon_size should land on (or wrap to) the other input,
+        # confirming the returned arc actually spans the two inputs
+        lon_start, lon_size = _antimeridian_safe_lon_bounds(lon_a_deg=179.0, lon_b_deg=-179.0)
+        wrapped_end = (lon_start + lon_size + 180.0) % 360.0 - 180.0
+        assert wrapped_end == pytest.approx(-179.0)
