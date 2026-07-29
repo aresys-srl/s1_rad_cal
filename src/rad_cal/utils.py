@@ -69,9 +69,17 @@ def create_pf_metadata(metadata: S1ChannelMetadata, channel_raster_file: Path, s
         acquisition_prf_i=metadata.swath_info.prf,
     )
     pf_swath_info.acquisition_start_time = att.PreciseDateTime.from_sec85(metadata.general_info.start_time.sec85)
-    acq_mode = (
-        "TOPSAR" if metadata.dataset_info.acquisition_mode in ["EW", "IW"] else metadata.dataset_info.acquisition_mode
-    )
+
+    mode = metadata.dataset_info.acquisition_mode
+    if mode in ["EW", "IW"]:
+        acq_mode = "TOPSAR"
+    elif mode in ["S1", "S2", "S3", "S4", "S5", "S6"]:
+        acq_mode = "STRIPMAP"
+    elif mode == "WV":
+        acq_mode = "WAVE"
+    else:
+        acq_mode = mode
+
     pf_dataset_info = mtd.DataSetInfo(acquisition_mode_i=acq_mode, image_quantity="BETA")
     pf_dataset_info = _compile_dataset_info(arepytools_dataset_info=pf_dataset_info, metadata=metadata)
     pf_state_vector = mtd.StateVectors(
