@@ -1,10 +1,10 @@
 [input]
-l1_product = "C:/Users/marco.spadoni/Downloads/S1C_IW_SLC__1SSV_20260625T083150_20260625T083221_008259_01054C_3F3E.SAFE"
-aux_pp1 = "C:/Users/marco.spadoni/Downloads/S1D_AUX_PP1_V20260319T000000_G20260603T073733.SAFE"
-aux_cal = "C:/Users/marco.spadoni/Downloads/S1D_AUX_CAL_V20260319T000000_G20260603T113322.SAFE"
+l1_product = "C:/Users/marco.spadoni/Desktop/rad-cal/S1D/S1D_EW_SLC__1SDV_20260308T093713_20260308T093826_001801_002923_08D6.SAFE"
+aux_pp1 = "C:/Users/marco.spadoni/Desktop/rad-cal/S1D/S1D_AUX_PP1_V20251110T000000_G20260603T073236.SAFE"
+aux_cal = "C:/Users/marco.spadoni/Desktop/rad-cal/S1D/S1D_AUX_CAL_V20251110T000000_G20260603T113236.SAFE"
 
 [output]
-directory = "C:/Users/marco.spadoni/Downloads"
+directory = "C:/Users/marco.spadoni/Desktop/rad-cal/S1D/pf_after_update"
 
 [corrections]
 eap = true

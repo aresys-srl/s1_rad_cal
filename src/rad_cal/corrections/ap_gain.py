@@ -16,7 +16,8 @@ from perseo_core.geometry.angles import compute_look_angles
 from perseo_core.timing.precise_datetime import PreciseDateTime
 
 from rad_cal import GETASSE_DEM_FOLDER
-from rad_cal.core.look_angles import compute_terrain_corrected_look_angles, load_dem_from_sar_times
+from rad_cal.core.angles import compute_terrain_corrected_look_angles
+from rad_cal.core.common import load_dem_from_sar_times
 from rad_cal.corrections.common import apply_roll_correction
 
 
