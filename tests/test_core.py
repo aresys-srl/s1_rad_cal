@@ -13,8 +13,11 @@ import rad_cal.core.common as angles_common
 from rad_cal.core.angles import (
     _look_angles_from_ecef_positions,
     compute_terrain_corrected_look_angles,
+    compute_terrain_normal,
 )
 from rad_cal.core.common import _antimeridian_safe_lon_bounds, _compute_footprint_from_times, load_dem_from_sar_times
+
+from .reference import compute_terrain_normal_numeric
 
 
 class TestLookAnglesFromEcefPositions:
@@ -311,3 +314,68 @@ class TestAntimeridianSafeLonBounds:
         lon_start, lon_size = _antimeridian_safe_lon_bounds(lon_a_deg=179.0, lon_b_deg=-179.0)
         wrapped_end = (lon_start + lon_size + 180.0) % 360.0 - 180.0
         assert wrapped_end == pytest.approx(-179.0)
+
+
+class TestTerrainNormalComputation:
+    @pytest.mark.parametrize(
+        "dem_fun",
+        [
+            lambda lat, lon: 500.0 + 100.0 * np.sin(np.radians(4.0 * lat)),
+            lambda lat, lon: 500.0 + 100.0 * np.cos(np.radians(5.0 * lon)),
+            lambda lat, lon: 500.0 + 100.0 * np.sin(np.radians(4.0 * lat)) + 80.0 * np.cos(np.radians(5.0 * lon)),
+            lambda lat, lon: (
+                500.0
+                + 100.0 * np.sin(np.radians(4.0 * lat))
+                + 80.0 * np.cos(np.radians(5.0 * lon))
+                + 40.0 * np.sin(np.radians(3.0 * (lat + lon)))
+            ),
+        ],
+    )
+    def test_compute_terrain_normal_matches_numerical(self, dem_fun):
+        """Semi-analytical normals should match the numerical reference."""
+
+        lat = np.linspace(40.0, 41.0, 101)
+        lon = np.linspace(10.0, 11.0, 151)
+
+        lat_grid, lon_grid = np.meshgrid(lat, lon, indexing="ij")
+        dem = dem_fun(lat_grid, lon_grid)
+
+        normal = compute_terrain_normal(dem, lat, lon)
+        normal_ref = compute_terrain_normal_numeric(dem, lat, lon)
+
+        # Ignore the outermost pixels, where np.gradient uses one-sided differences.
+        sl = np.s_[1:-1, 1:-1]
+
+        dot = np.sum(normal[sl] * normal_ref[sl], axis=-1)
+        dot = np.clip(dot, -1.0, 1.0)
+
+        angle_deg = np.degrees(np.arccos(dot))
+
+        assert np.nanmax(angle_deg) < 1e-5
+
+    def test_compute_terrain_normal_raises_for_non_monotonic_longitude(self):
+        dem = np.zeros((2, 3))
+        lat = np.array([45.0, 46.0])
+        lon = np.array([10.0, 9.0, 11.0])
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                r"dem_lon_axis must be monotonic increasing\. "
+                r"If it crosses the antimeridian, unwrap it first"
+            ),
+        ):
+            compute_terrain_normal(dem, lat, lon)
+
+    def test_compute_terrain_normal_raises_for_shape_mismatch(self):
+        dem = np.zeros((3, 3))
+        lat = np.array([45.0, 46.0])
+        lon = np.array([10.0, 11.0, 12.0])
+
+        expected = (
+            r"dem_values shape \(3, 3\) does not match "
+            r"axis lengths \(2, 3\)"
+        )
+
+        with pytest.raises(ValueError, match=expected):
+            compute_terrain_normal(dem, lat, lon)
