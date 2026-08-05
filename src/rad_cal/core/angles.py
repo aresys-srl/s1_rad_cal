@@ -17,14 +17,14 @@ WGS84 = Geod(ellps="WGS84")
 
 
 def _geocode_dem_to_sar_raster(
-    dem_values,
-    dem_lat_axis,
-    dem_lon_axis,
-    trajectory,
-    range_times,
-    azimuth_times,
-    doppler_frequency,
-    wavelength,
+    dem_values: npt.NDArray[np.floating],
+    dem_lat_axis: npt.NDArray[np.floating],
+    dem_lon_axis: npt.NDArray[np.floating],
+    trajectory: Trajectory,
+    range_times: npt.NDArray[np.floating],
+    azimuth_times: npt.NDArray,
+    doppler_frequency: float,
+    wavelength: float,
     *,
     terrain_normal: bool = False,
 ) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating] | None]:
@@ -34,8 +34,6 @@ def _geocode_dem_to_sar_raster(
     lat_grid, lon_grid = np.meshgrid(dem_lat_axis, dem_lon_axis, indexing="ij")
     llh = np.column_stack([np.deg2rad(lat_grid.ravel()), np.deg2rad(lon_grid.ravel()), dem_values.ravel()])
     ecef = llh2xyz(llh)
-
-    normals = compute_terrain_normal(dem_values, dem_lat_axis, dem_lon_axis).reshape(-1, 3)
 
     az_time, rg_time = inverse_geocoding_monostatic(
         trajectory=trajectory,
@@ -48,11 +46,12 @@ def _geocode_dem_to_sar_raster(
     src_points = np.column_stack([az_time - az0, rg_time])
     az_grid, rg_grid = np.meshgrid(azimuth_times - az0, range_times, indexing="ij")
 
+    normal_raster = None
     if terrain_normal:
+        normals = compute_terrain_normal(dem_values, dem_lat_axis, dem_lon_axis).reshape(-1, 3)
         interp = LinearNDInterpolator(src_points, np.hstack([ecef, normals]), fill_value=np.nan, rescale=True)
     else:
         interp = LinearNDInterpolator(src_points, ecef, fill_value=np.nan, rescale=True)
-        normal_raster = None
     raster = interp(az_grid, rg_grid)
     ground_points_raster = raster[..., :3]
     if terrain_normal:
@@ -88,7 +87,7 @@ def _compute_df_dlat(cos_lat, sin_lat, cos_lon, sin_lon, height_m, M):
     return x, y, z
 
 
-def _compute_df_dlon(cos_lat, sin_lon, cos_lon, height_m, N):
+def _compute_df_dlon(cos_lat, cos_lon, sin_lon, height_m, N):
     """
     Computes the partial derivative of ECEF coordinates with respect to
     longitude in radians (df/dlon).
@@ -154,7 +153,7 @@ def compute_terrain_normal(
 
     dh_x, dh_y, dh_z = _compute_df_dh(cos_lat, sin_lat, cos_lon, sin_lon)
     dlat_x, dlat_y, dlat_z = _compute_df_dlat(cos_lat, sin_lat, cos_lon, sin_lon, dem_values, M)
-    dlon_x, dlon_y, dlon_z = _compute_df_dlon(cos_lat, sin_lon, cos_lon, dem_values, N)
+    dlon_x, dlon_y, dlon_z = _compute_df_dlon(cos_lat, cos_lon, sin_lon, dem_values, N)
 
     dR_dlat_x = dlat_x + dh_x * dh_dlat
     dR_dlat_y = dlat_y + dh_y * dh_dlat
@@ -169,7 +168,7 @@ def compute_terrain_normal(
     nz_raw = dR_dlon_x * dR_dlat_y - dR_dlon_y * dR_dlat_x
 
     norm = np.sqrt(nx_raw**2 + ny_raw**2 + nz_raw**2)
-    norm = np.where(norm > np.finfo(float).eps, norm, np.nan)
+    norm = np.where(norm > 1e-6, norm, np.nan)
 
     normal = np.stack(
         [
@@ -185,15 +184,45 @@ def compute_terrain_normal(
 def compute_terrain_corrected_incidence_angles(
     dem_values: npt.NDArray[np.floating],
     dem_lat_axis: npt.NDArray[np.floating],
-    dem_lon_axis,
+    dem_lon_axis: npt.NDArray[np.floating],
     trajectory: Trajectory,
     range_times: npt.NDArray[np.floating],
-    azimuth_times: npt.NDArray[np.floating],
+    azimuth_times: npt.NDArray,
     *,
+    radians: bool = True,
     doppler_frequency: float = 0.0,
     wavelength: float = 1.0,
-    radians: bool = True,
 ) -> npt.NDArray[np.floating]:
+    """Compute incidence angles taking into account terrain elevation and slope
+
+    Parameters
+    ----------
+    dem_values : npt.NDArray[np.floating]
+        DEM heights of shape (N_lat, N_lon). Area covered by DEM
+        must correspond to scene area defined by range and azimuth times
+        (``load_dem_from_sar_times`` can be used for this purpose).
+    dem_lat_axis : npt.NDArray[np.floating]
+        Latitude axis in degrees of shape (N_lat,).
+    dem_lon_axis : npt.NDArray[np.floating]
+        Longitude axis in degrees of shape (N_lon,).
+    trajectory : Trajectory
+        Sensor trajectory.
+    range_times : npt.NDArray[np.floating]
+        Range time axis.
+    azimuth_times : npt.NDArray
+        Azimuth time axis, as PreciseDateTime
+    radians : bool, optional
+        output angles are expressed in radians if this flag is set to True (default), if False are expressed in degrees
+    doppler_frequency : float, optional
+        doppler frequency centroid values to perform the inverse geocoding, by default 0.0
+    wavelength : float, optional
+        carrier signal wavelength, by default 1.0
+
+    Returns
+    -------
+    npt.NDArray[np.floating]
+        incidence angles with shape (len(azimuth_times), len(range_times))
+    """
     ground_points, normals = _geocode_dem_to_sar_raster(
         dem_values,
         dem_lat_axis,
@@ -207,7 +236,7 @@ def compute_terrain_corrected_incidence_angles(
     )
 
     n_az, n_rng = len(azimuth_times), len(range_times)
-    sensor_positions = np.broadcast_to(trajectory.position(azimuth_times)[:, None, :], (n_az, n_rng, 3))
+    sensor_positions = np.repeat(trajectory.position(azimuth_times), n_rng, axis=0)
 
     angles = compute_incidence_angles_core(
         sensor_positions=sensor_positions.reshape(-1, 3),
@@ -216,7 +245,9 @@ def compute_terrain_corrected_incidence_angles(
         assume_surface_normals_normalized=True,
     ).reshape(n_az, n_rng)
 
-    return np.rad2deg(angles) if not radians else angles
+    if not radians:
+        return np.rad2deg(angles)
+    return angles
 
 
 def compute_terrain_corrected_look_angles(
@@ -237,7 +268,9 @@ def compute_terrain_corrected_look_angles(
     Parameters
     ----------
     dem_values : npt.NDArray[np.floating]
-        DEM heights of shape (N_lat, N_lon).
+        DEM heights of shape (N_lat, N_lon). Area covered by DEM
+        must correspond to scene area defined by range and azimuth times
+        (``load_dem_from_sar_times`` can be used for this purpose).
     dem_lat_axis : npt.NDArray[np.floating]
         Latitude axis in degrees of shape (N_lat,).
     dem_lon_axis : npt.NDArray[np.floating]
@@ -275,13 +308,14 @@ def compute_terrain_corrected_look_angles(
     angles = _look_angles_from_ecef_positions(
         sensor_pos_ecef=sensor_positions,
         ground_pos_ecef=ground_points,
-        radians=radians,
     )
+    if not radians:
+        return np.rad2deg(angles)
     return angles
 
 
 def _look_angles_from_ecef_positions(
-    sensor_pos_ecef: npt.NDArray[np.floating], ground_pos_ecef: npt.NDArray[np.floating], *, radians: bool = True
+    sensor_pos_ecef: npt.NDArray[np.floating], ground_pos_ecef: npt.NDArray[np.floating]
 ) -> npt.NDArray[np.floating]:
     """Compute look angles from sensor and ground ECEF positions
 
@@ -293,14 +327,11 @@ def _look_angles_from_ecef_positions(
     ground_pos_ecef : npt.NDArray[np.floating]
         Ground positions with shape (L, M, 3), where M is the number of ground points
         per sensor position (e.g. one per range sample).
-    radians : bool, optional
-        Output angles are expressed in radians if this flag is set to True (default), if False
-        are expressed in degrees.
 
     Returns
     -------
     npt.NDArray[np.floating]
-        Look angles with shape (L, M), where L is the number of sensor positions and M is the
+        Look angles with shape (L, M) in radians, where L is the number of sensor positions and M is the
         number of ground points per sensor position.
     """
     if sensor_pos_ecef.ndim != 2 or sensor_pos_ecef.shape[1] != 3:
@@ -321,6 +352,4 @@ def _look_angles_from_ecef_positions(
 
     angles = np.arccos(np.clip(np.einsum("lmk,lk->lm", los_hat, nadir_hat), -1.0, 1.0))
 
-    if not radians:
-        return np.rad2deg(angles)
     return angles

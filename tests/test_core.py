@@ -39,7 +39,7 @@ class TestLookAnglesFromEcefPositions:
         with pytest.raises(ValueError, match="Azimuth dimension mismatch"):
             _look_angles_from_ecef_positions(sensor, ground)
 
-    def test_angles_radians(self, monkeypatch):
+    def test_angles(self, monkeypatch):
         monkeypatch.setattr(
             compute_angles,
             "compute_nadir_from_sensor_positions",
@@ -47,34 +47,10 @@ class TestLookAnglesFromEcefPositions:
         )
         sensor = np.array([[0.0, 0.0, 100.0]])
         ground = np.array([[[0.0, 0.0, 0.0], [100.0, 0.0, 100.0]]])
-        angles = _look_angles_from_ecef_positions(sensor, ground, radians=True)
+        angles = _look_angles_from_ecef_positions(sensor, ground)
 
         assert angles.shape == (1, 2)
         np.testing.assert_allclose(angles, [[0.0, np.pi / 2]], atol=1e-12)
-
-    def test_angles_degrees(self, monkeypatch):
-        monkeypatch.setattr(
-            compute_angles,
-            "compute_nadir_from_sensor_positions",
-            lambda sensor_positions: np.array([[0.0, 0.0, -1.0]]),
-        )
-        sensor = np.array([[0.0, 0.0, 100.0]])
-        ground = np.array([[[0.0, 0.0, 0.0], [100.0, 0.0, 100.0]]])
-
-        angles = _look_angles_from_ecef_positions(sensor, ground, radians=False)
-
-        np.testing.assert_allclose(angles, [[0.0, 90.0]], atol=1e-12)
-
-    def test_radian_degree_consistency(self):
-        sensor = np.array([[0.0, 100.0, 100.0]])
-        ground = np.array([[[0.0, 0.0, 0.0], [100.0, 0.0, 100.0]]])
-        rad = _look_angles_from_ecef_positions(sensor, ground)
-        deg = _look_angles_from_ecef_positions(
-            sensor,
-            ground,
-            radians=False,
-        )
-        np.testing.assert_allclose(np.rad2deg(rad), deg)
 
     def test_multiple_sensor_positions(self, monkeypatch):
         # Two independent azimuth lines, each with its own nadir direction.
@@ -91,7 +67,7 @@ class TestLookAnglesFromEcefPositions:
             ]
         )
 
-        angles = _look_angles_from_ecef_positions(sensor, ground, radians=False)
+        angles = _look_angles_from_ecef_positions(sensor, ground)
 
         assert angles.shape == (2, 1)
         np.testing.assert_allclose(angles, [[0.0], [0.0]], atol=1e-10)
@@ -135,6 +111,53 @@ class TestComputeTerrainCorrectedLookAngles:
         )
 
         assert angles_deg.shape == (2, 1)
+
+    def test_radians_degrees_consistency(self, monkeypatch):
+        ground_points = (
+            np.array(
+                [
+                    [[0.0, 0.0, 0.0]],
+                    [[100.0, 0.0, 0.0]],
+                ],
+            ),
+            None,
+        )
+        monkeypatch.setattr(
+            compute_angles,
+            "_geocode_dem_to_sar_raster",
+            lambda **kwargs: ground_points,
+        )
+        monkeypatch.setattr(
+            compute_angles,
+            "compute_nadir_from_sensor_positions",
+            lambda sensor_positions: np.array([[0.0, 0.0, -1.0], [0.0, 0.0, -1.0]]),
+        )
+
+        class FakeTrajectory:
+            def position(self, times):
+                assert len(times) == 2
+                return np.array([[0.0, 0.0, 100.0], [100.0, 0.0, 100.0]])
+
+        angles_deg = compute_terrain_corrected_look_angles(
+            dem_values=np.zeros((1, 1)),
+            dem_lat_axis=np.array([0.0]),
+            dem_lon_axis=np.array([0.0]),
+            trajectory=FakeTrajectory(),
+            range_times=np.array([0.0]),
+            azimuth_times=np.array([0.0, 1.0]),
+            radians=False,
+        )
+
+        angles_rad = compute_terrain_corrected_look_angles(
+            dem_values=np.zeros((1, 1)),
+            dem_lat_axis=np.array([0.0]),
+            dem_lon_axis=np.array([0.0]),
+            trajectory=FakeTrajectory(),
+            range_times=np.array([0.0]),
+            azimuth_times=np.array([0.0, 1.0]),
+            radians=True,
+        )
+        np.testing.assert_allclose(angles_deg, np.rad2deg(angles_rad), atol=1e-10)
 
 
 class TestComputeFootprintFromTimes:
