@@ -28,6 +28,46 @@ def _geocode_dem_to_sar_raster(
     *,
     terrain_normal: bool = False,
 ) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating] | None]:
+    """Geocode a DEM into SAR (azimuth time, range time) raster space.
+
+    Each DEM grid point is converted to ECEF and located in the SAR acquisition
+    via inverse geocoding, giving each point an (azimuth time, range time)
+    coordinate. These scattered (az, rg) points, together with their ECEF
+    positions (and, optionally, terrain normals), are then interpolated with a
+    single Delaunay triangulation (``LinearNDInterpolator``) onto the regular
+    ``azimuth_times`` / ``range_times`` raster grid.
+
+    Parameters
+    ----------
+    dem_values : npt.NDArray[np.floating]
+        DEM heights of shape (N_lat, N_lon).
+    dem_lat_axis : npt.NDArray[np.floating]
+        Latitude axis in degrees of shape (N_lat,).
+    dem_lon_axis : npt.NDArray[np.floating]
+        Longitude axis in degrees of shape (N_lon,).
+    trajectory : Trajectory
+        Sensor trajectory.
+    range_times : npt.NDArray[np.floating]
+        Range time axis onto which the DEM is interpolated.
+    azimuth_times : npt.NDArray
+        Azimuth time axis, as PreciseDateTime, onto which the DEM is interpolated.
+    doppler_frequency : float
+        Doppler frequency centroid used for the inverse geocoding.
+    wavelength : float
+        Carrier signal wavelength.
+    terrain_normal : bool, optional
+        If True, also compute ECEF terrain unit normals on the DEM grid and
+        interpolate them onto the raster grid alongside the ground points, by
+        default False.
+
+    Returns
+    -------
+    tuple[npt.NDArray[np.floating], npt.NDArray[np.floating] | None]
+        ``(ground_points_raster, normal_raster)``, where ``ground_points_raster``
+        has shape ``(len(azimuth_times), len(range_times), 3)`` with ECEF
+        coordinates, and ``normal_raster`` has the same shape with unit terrain
+        normal vectors if ``terrain_normal`` is True, otherwise None.
+    """
     if dem_values.shape != (len(dem_lat_axis), len(dem_lon_axis)):
         raise ValueError("Mismatch between DEM and latitude/longitude axis")
 
@@ -168,7 +208,7 @@ def compute_terrain_normal(
     nz_raw = dR_dlon_x * dR_dlat_y - dR_dlon_y * dR_dlat_x
 
     norm = np.sqrt(nx_raw**2 + ny_raw**2 + nz_raw**2)
-    norm = np.where(norm > 1e-6, norm, np.nan)
+    norm = np.where(norm > np.finfo(float).eps, norm, np.nan)
 
     normal = np.stack(
         [
@@ -236,7 +276,7 @@ def compute_terrain_corrected_incidence_angles(
     )
 
     n_az, n_rng = len(azimuth_times), len(range_times)
-    sensor_positions = np.repeat(trajectory.position(azimuth_times), n_rng, axis=0)
+    sensor_positions = np.broadcast_to(trajectory.position(azimuth_times)[:, np.newaxis, :], ground_points.shape)
 
     angles = compute_incidence_angles_core(
         sensor_positions=sensor_positions.reshape(-1, 3),
