@@ -7,11 +7,14 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from perseo_core.geometry.angles import compute_incidence_angles_core
 
 import rad_cal.core.angles as compute_angles
 import rad_cal.core.common as angles_common
 from rad_cal.core.angles import (
+    _geocode_dem_to_sar_raster,
     _look_angles_from_ecef_positions,
+    compute_terrain_corrected_incidence_angles,
     compute_terrain_corrected_look_angles,
     compute_terrain_normal,
 )
@@ -402,3 +405,193 @@ class TestTerrainNormalComputation:
 
         with pytest.raises(ValueError, match=expected):
             compute_terrain_normal(dem, lat, lon)
+
+
+class TestTerrainCorrectedIncidenceAngles:
+    """ "
+    Sensor directly above the ground point, surface normal pointing straight up
+    toward the sensor → incidence angle must be 0.
+    """
+
+    def test_normal_incidence_on_flat_horizontal_surface(self, monkeypatch):
+        # ground at origin, sensor directly above on z-axis, normal = z-hat
+        ground = np.zeros((1, 1, 3))
+        normals = np.array([[[0.0, 0.0, 1.0]]])
+
+        monkeypatch.setattr(
+            compute_angles,
+            "_geocode_dem_to_sar_raster",
+            lambda *args, **kwargs: (ground, normals),
+        )
+        monkeypatch.setattr(
+            compute_angles,
+            "compute_incidence_angles_core",
+            lambda sensor_positions, ground_points, surface_normals, assume_surface_normals_normalized: np.array([0.0]),
+        )
+
+        class FakeTrajectory:
+            def position(self, times):
+                return np.array([[0.0, 0.0, 7000000.0]])
+
+        angles = compute_terrain_corrected_incidence_angles(
+            dem_values=np.zeros((2, 2)),
+            dem_lat_axis=np.array([40.0, 41.0]),
+            dem_lon_axis=np.array([10.0, 11.0]),
+            trajectory=FakeTrajectory(),
+            range_times=np.array([0.003]),
+            azimuth_times=np.array([0.0]),
+        )
+        np.testing.assert_allclose(angles, [[0.0]], atol=1e-12)
+
+    def test_terrain_corrected_incidence_angles_with_perseo(self, monkeypatch):
+        ground = np.zeros((1, 1, 3))
+        normals = np.array([[[0.0, 0.0, 1.0]]])
+
+        monkeypatch.setattr(
+            compute_angles,
+            "_geocode_dem_to_sar_raster",
+            lambda *args, **kwargs: (ground, normals),
+        )
+        monkeypatch.setattr(
+            compute_angles,
+            "compute_incidence_angles_core",
+            lambda sensor_positions, ground_points, surface_normals, assume_surface_normals_normalized: np.array([0.0]),
+        )
+
+        class FakeTrajectory:
+            def position(self, times):
+                return np.array([[0.0, 0.0, 7000000.0]])
+
+            def velocity(self, times):
+                return np.array([[0.0, 0.0, 0.0]])
+
+        terrain_corrected_angles = compute_terrain_corrected_incidence_angles(
+            dem_values=np.zeros((2, 2)),
+            dem_lat_axis=np.array([40.0, 41.0]),
+            dem_lon_axis=np.array([10.0, 11.0]),
+            trajectory=FakeTrajectory(),
+            range_times=np.array([0.003]),
+            azimuth_times=np.array([0.0]),
+        )
+        perseo_angles = compute_incidence_angles_core(
+            sensor_positions=FakeTrajectory().position(np.array([0.003]))[0], ground_points=np.array([0.0, 0.0, 1.0])
+        )
+        np.testing.assert_allclose(terrain_corrected_angles, perseo_angles, atol=1e-12)
+
+
+class TestGeocodeDemToSarRaster:
+    def test_geocode_dem_shape_mismatch(self):
+        with pytest.raises(ValueError, match="Mismatch between DEM"):
+            _geocode_dem_to_sar_raster(
+                dem_values=np.zeros((2, 3)),
+                dem_lat_axis=np.array([0.0, 1.0]),
+                dem_lon_axis=np.array([0.0, 1.0]),
+                trajectory=None,
+                range_times=np.array([1.0]),
+                azimuth_times=np.array([0.0]),
+                doppler_frequency=0.0,
+                wavelength=1.0,
+            )
+
+    def test_geocode_without_normals(self, monkeypatch):
+        dem = np.array([[10.0]])
+        lat = np.array([45.0])
+        lon = np.array([9.0])
+
+        ecef = np.array([[1.0, 2.0, 3.0]])
+
+        monkeypatch.setattr(
+            compute_angles,
+            "llh2xyz",
+            lambda llh: ecef,
+        )
+
+        monkeypatch.setattr(
+            compute_angles,
+            "inverse_geocoding_monostatic",
+            lambda **kwargs: (
+                np.array([5.0]),
+                np.array([0.1]),
+            ),
+        )
+
+        class FakeInterpolator:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def __call__(self, az, rg):
+                return np.array([[[1.0, 2.0, 3.0]]])
+
+        monkeypatch.setattr(
+            compute_angles,
+            "LinearNDInterpolator",
+            FakeInterpolator,
+        )
+
+        ground, normals = _geocode_dem_to_sar_raster(
+            dem,
+            lat,
+            lon,
+            trajectory=None,
+            range_times=np.array([0.1]),
+            azimuth_times=np.array([5.0]),
+            doppler_frequency=0.0,
+            wavelength=1.0,
+        )
+
+        np.testing.assert_allclose(ground, [[[1.0, 2.0, 3.0]]])
+        assert normals is None
+
+    def test_geocode_with_normals(self, monkeypatch):
+        dem = np.array([[10.0]])
+        lat = np.array([45.0])
+        lon = np.array([9.0])
+
+        monkeypatch.setattr(
+            compute_angles,
+            "llh2xyz",
+            lambda llh: np.array([[1.0, 2.0, 3.0]]),
+        )
+
+        monkeypatch.setattr(
+            compute_angles,
+            "inverse_geocoding_monostatic",
+            lambda **kwargs: (
+                np.array([5.0]),
+                np.array([0.1]),
+            ),
+        )
+
+        monkeypatch.setattr(
+            compute_angles,
+            "compute_terrain_normal",
+            lambda *args: np.array([[[0.0, 0.0, 2.0]]]),
+        )
+
+        class FakeInterpolator:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def __call__(self, az, rg):
+                return np.array([[[1.0, 2.0, 3.0, 0.0, 0.0, 2.0]]])
+
+        monkeypatch.setattr(
+            compute_angles,
+            "LinearNDInterpolator",
+            FakeInterpolator,
+        )
+
+        ground, normals = _geocode_dem_to_sar_raster(
+            dem,
+            lat,
+            lon,
+            trajectory=None,
+            range_times=np.array([0.1]),
+            azimuth_times=np.array([5.0]),
+            doppler_frequency=0.0,
+            wavelength=1.0,
+            terrain_normal=True,
+        )
+
+        np.testing.assert_allclose(ground, [[[1.0, 2.0, 3.0]]])
+        np.testing.assert_allclose(normals, [[[0.0, 0.0, 1.0]]])
