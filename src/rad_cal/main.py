@@ -17,12 +17,14 @@ from eo_products.sentinel1.reader import (
     read_channel_calibration,
     read_channel_data,
     read_channel_metadata,
+    read_channel_noise_vectors,
 )
 
 from rad_cal.config import Config
 from rad_cal.corrections.abs_cal import compute_absolute_calibration_correction
 from rad_cal.corrections.ap_gain import compute_eap_gain_correction
 from rad_cal.corrections.common import get_aux_files
+from rad_cal.corrections.denoising import apply_denoising_correction
 from rad_cal.corrections.proc_gain import compute_processing_gain_correction, get_aux_pp1_xml_path_from_product
 from rad_cal.utils import create_pf_metadata
 
@@ -53,6 +55,7 @@ def run(config: Config):
     - Elevation antenna pattern gain        : {"ON" if config.corrections.eap else "OFF"}
     - Absolute calibration factor           : {"ON" if config.corrections.absolute_calibration else "OFF"}
     - Processing gain                       : {"ON" if config.corrections.processing_gain else "OFF"}
+    - Thermal denoising                     : {"ON" if config.corrections.denoising else "OFF"}
     """
     logger.info(summary)
 
@@ -72,6 +75,7 @@ def run(config: Config):
         metadata_file, raster_file_path, cal_file, noise_path = prod.get_files_from_channel_name(channel)
         scaling_factor = read_channel_calibration(xml_path=cal_file)
         metadata = read_channel_metadata(xml_path=metadata_file)
+        list_azimuth_noise_vectors, list_range_noise_vectors = read_channel_noise_vectors(noise_path)
         swath = metadata.general_info.swath
         pol = metadata.general_info.polarization.name
 
@@ -143,6 +147,17 @@ def run(config: Config):
                 )
             else:
                 abs_cal_correction = 1
+
+            if config.corrections.denoising:
+                target_area = apply_denoising_correction(
+                    target_area=target_area,
+                    swath=swath,
+                    azimuth_indexes=(target_block[0], target_block[0] + target_block[2]),
+                    azimuth_noise_vectors=list_azimuth_noise_vectors,
+                    range_noise_vectors=list_range_noise_vectors,
+                    is_grd=False,
+                    scaling_conversion=scaling_factor,
+                )
 
             radiometric_correction = eap_gain_correction * abs_cal_correction * proc_gain_correction
             target_area_recal = target_area * radiometric_correction

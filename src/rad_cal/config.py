@@ -16,6 +16,7 @@ class Corrections:
     eap: bool = True
     processing_gain: bool = True
     absolute_calibration: bool = True
+    denoising: bool = False
 
 
 @dataclass
@@ -41,5 +42,6 @@ def from_toml(path: str | Path) -> Config:
             eap=cfg["corrections"]["eap"],
             processing_gain=cfg["corrections"]["processing_gain"],
             absolute_calibration=cfg["corrections"]["absolute_calibration"],
+            denoising=cfg["corrections"]["denoising"],
         ),
     )

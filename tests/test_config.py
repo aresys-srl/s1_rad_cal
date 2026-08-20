@@ -27,6 +27,7 @@ directory = "output"
 eap = true
 processing_gain = false
 absolute_calibration = true
+denoising = false
 """
     )
 
