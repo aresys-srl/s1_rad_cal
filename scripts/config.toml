@@ -10,3 +10,4 @@ directory = "C:/Users/marco.spadoni/Desktop/rad-cal/S1D/pf_after_update"
 eap = true
 processing_gain = true
 absolute_calibration = true
+denoising = true
