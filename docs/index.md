@@ -10,7 +10,7 @@ tags:
 
 ``rad-cal`` is the Aresys' radiometric re-calibration tool for Sentinel-1 L1 products.
 
-# Corrections
+## Corrections
 
 This tool applies a set of radiometric corrections to Sentinel-1 Level-1 products in order to improve the consistency and accuracy of radar backscatter measurements. The supported corrections are:
 
@@ -19,3 +19,7 @@ This tool applies a set of radiometric corrections to Sentinel-1 Level-1 product
 - Elevation antenna pattern (EAP) correction
 
 Each correction requires auxiliary information provided by Sentinel-1 calibration products. Refer to the [radiometric corrections](features\corrections.md) for further information.
+
+## Thermal De-Noising
+
+This tool can remove thermal noise annotated in products metadata through the noise vectors. Refer to [thermal de-noising](features\denoising.md) for further information.

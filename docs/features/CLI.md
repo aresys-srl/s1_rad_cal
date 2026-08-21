@@ -54,4 +54,5 @@ directory = "path/where/output/is/stored"
 eap = true                      # whether to apply elevation antenna pattern correction
 processing_gain = true          # whether to apply processing gain correction
 absolute_calibration = true     # whether to apply absolute calibration correction
+denoising = false               # whether to apply thermal de-noising
 ```
