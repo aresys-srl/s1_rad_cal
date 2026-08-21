@@ -146,8 +146,7 @@ def compute_terrain_normal(
     dem_lat_axis: npt.NDArray[np.floating],
     dem_lon_axis: npt.NDArray[np.floating],
 ) -> npt.NDArray[np.floating]:
-    """
-    Computes ECEF terrain unit normal vectors.
+    """Computes ECEF terrain unit normal vectors.
 
     Parameters
     ----------

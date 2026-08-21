@@ -116,8 +116,7 @@ def _antimeridian_safe_lon_bounds(lon_a_deg: float, lon_b_deg: float) -> tuple[f
 
     if direct_size < wrap_size:
         return lon_low, direct_size
-    else:
-        return lon_high, wrap_size
+    return lon_high, wrap_size
 
 
 def load_dem_from_sar_times(
