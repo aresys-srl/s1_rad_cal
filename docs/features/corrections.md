@@ -60,3 +60,10 @@ The DEM tiles must be downloaded separately and extracted before use. The softwa
 
 !!! Warning
     Tiles are stored as compressed ZIP files and they need to be extracted before usage.
+
+## Examples
+
+<figure>
+  <img src="/assets/correction_example.png" alt="Effect of radiometric corrections on S1C IW1 data over northern Italy">
+  <figcaption>Effect of radiometric corrections on S1C IW1 data over Northern Italy</figcaption>
+</figure>
