@@ -355,6 +355,7 @@ class TestTerrainNormalComputation:
                 + 80.0 * np.cos(np.radians(5.0 * lon))
                 + 40.0 * np.sin(np.radians(3.0 * (lat + lon)))
             ),
+            lambda lat, lon: 500.0 + 100.0 * np.sin(np.radians(1000.0 * lat)) + 80.0 * np.cos(np.radians(1000.0 * lon)),
         ],
     )
     def test_compute_terrain_normal_matches_numerical(self, dem_fun):
