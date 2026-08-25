@@ -50,12 +50,19 @@ def run(config: Config):
         raise ValueError("No corrections selected, aborting...")
 
     summary = f"""
+    Recalibrating {l1_product_path.name}
+
     Selected corrections
     --------------------
     - Elevation antenna pattern gain        : {"ON" if config.corrections.eap else "OFF"}
     - Absolute calibration factor           : {"ON" if config.corrections.absolute_calibration else "OFF"}
     - Processing gain                       : {"ON" if config.corrections.processing_gain else "OFF"}
     - Thermal denoising                     : {"ON" if config.corrections.denoising else "OFF"}
+
+    Auxiliary files in use
+    ----------------------
+    {aux_pp1_path_new.name}
+    {aux_cal_path_new.name}
     """
     logger.info(summary)
 
