@@ -36,9 +36,6 @@ def apply_denoising_correction(
 
     scale[valid] = np.sqrt(np.maximum(power[valid] - noise_vectors[valid], 0.0) / power[valid])
 
-    nan_mask = np.isnan(target_area) | np.isnan(noise_vectors)
-
     target_area = target_area * scale
-    target_area[nan_mask] = np.nan
 
     return target_area
