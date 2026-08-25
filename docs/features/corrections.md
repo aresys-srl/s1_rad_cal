@@ -19,9 +19,8 @@ $$
 \text{absolute calibration correction} = \frac{\text{original absolute calibration constant}}{\text{updated absolute calibration constant}}
 $$
 
-
-
 ## Processing gain
+
 The processing gain is a mode- and polarization-dependent scaling factor applied during the Sentinel-1 Level-1 processing chain. It is required for accurate absolute radiometric calibration and radiometric reprocessing.
 
 The processing gain values used during the generation of Level-1 products are not explicitly stored in the product annotations. Instead, they are recorded in the history information of the `AUX_PP1` auxiliary files.
@@ -42,14 +41,14 @@ The software requires a local collection of `AUX_PP1` files to perform this auto
 
 The location of the `AUX_PP1` dataset must be provided through the `AUX_PP1_DATASET` environment variable:
 
-```bash
+``` bash
 export AUX_PP1_DATASET=/path/to/AUX_PP1/dataset  # linux
 $env:AUX_PP1_DATASET = /path/to/AUX_PP1/dataset  # windows
 ```
 
 !!! Warning
-    All AUX_PP1 files must be extracted before running the software. Compressed archives are not supported directly.
 
+    All AUX_PP1 files must be extracted before running the software. Compressed archives are not supported directly.
 
 ## Elevation Antenna Pattern
 
@@ -57,14 +56,15 @@ The Sentinel-1 elevation antenna pattern (EAP) correction compensates for range-
 
 The location of the GETASSE30 DEM dataset must be provided through the `GETASSE_DEM_FOLDER` environment variable:
 
-```bash
+``` bash
 export GETASSE_DEM_FOLDER=/path/to/dem/folder  # linux
 $env:GETASSE_DEM_FOLDER = /path/to/dem/folder  # windows
 ```
 
-The DEM tiles must be downloaded separately and extracted before use. The software expects the raw binary tile files (e.g. `45N015E.GETASSE30`) to be available directly inside the folder specified by `GETASSE_DEM_FOLDER`. GETASSE30 tiles can be downloaded from the [ESA official archive](https://step.esa.int/auxdata/dem/GETASSE30/). 
+The DEM tiles must be downloaded separately and extracted before use. The software expects the raw binary tile files (e.g. `45N015E.GETASSE30`) to be available directly inside the folder specified by `GETASSE_DEM_FOLDER`. GETASSE30 tiles can be downloaded from the [ESA official archive](https://step.esa.int/auxdata/dem/GETASSE30/).
 
 !!! Warning
+
     Tiles are stored as compressed ZIP files and they need to be extracted before usage.
 
 The elevation antenna pattern correction is implemented as follows:
