@@ -9,6 +9,7 @@ from types import SimpleNamespace
 import numpy as np
 
 import rad_cal.corrections.ap_gain as eap_gain
+from rad_cal.config import ElevationSource
 from rad_cal.corrections.ap_gain import (
     compute_antenna_pattern_gain_from_metadata,
     get_elevation_antenna_pattern_from_aux_cal,
@@ -165,6 +166,7 @@ def test_compute_eap_gain_correction(monkeypatch):
         aux_cal_xml_path="dummy.xml",
         az_block_size=np.array([4]),
         bc_num=0,
+        elevation_source=ElevationSource.DEM,
     )
 
     expected = np.sqrt(2) * np.ones(3)
