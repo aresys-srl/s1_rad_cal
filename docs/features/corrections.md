@@ -52,8 +52,10 @@ $env:AUX_PP1_DATASET = /path/to/AUX_PP1/dataset  # windows
 
 ## Elevation Antenna Pattern
 
-The Sentinel-1 elevation antenna pattern (EAP) correction compensates for range-dependent variations in antenna gain. The correction uses complex two-way antenna gain patterns provided in the `AUX_CAL` calibration files to restore accurate absolute radiometric measurements. In order to apply the updated EAP correction, this software accounts for terrain-induced variations in elevation angle using the [GETASSE30 Digital Elevation Model (DEM)](https://step.esa.int/main/wp-content/help/versions/9.0.0/snap/org.esa.snap.snap.help/desktop/GETASSE30ElevationModel.html). The DEM is used to compute local elevation angles required for the correct interpolation of the EAP.
+The Sentinel-1 elevation antenna pattern (EAP) correction compensates for range-dependent variations in antenna gain. The correction uses complex two-way antenna gain patterns provided in the `AUX_CAL` calibration files to restore accurate absolute radiometric measurements.
 
+User can decide from the configuration file whether to account for terrain-induced variations in elevation angle through the [GETASSE30 Digital Elevation Model (DEM)](https://step.esa.int/main/wp-content/help/versions/9.0.0/snap/org.esa.snap.snap.help/desktop/GETASSE30ElevationModel.html).
+In such case, the DEM is used to compute local elevation angles required for the correct interpolation of the EAP.
 The location of the GETASSE30 DEM dataset must be provided through the `GETASSE_DEM_FOLDER` environment variable:
 
 ``` bash
@@ -70,7 +72,7 @@ The DEM tiles must be downloaded separately and extracted before use. The softwa
 The elevation antenna pattern correction is implemented as follows:
 
 - Original EAP is retrieved from product metadata.
-- Look angles are computed taking into account terrain elevation. Roll is then subtracted to retrieve the elevation angle.
+- Look angles are computed. Roll is then subtracted to retrieve the elevation angle.
 - The updated EAP is retrieved from `AUX_CAL` file.
 - For each raster pixel the updated EAP is interpolated using the elevation angle computed before.
 - Each pixel is multiplied by the correction given by:
@@ -83,5 +85,5 @@ $$
 
 <figure>
   <img src="/assets/correction_example.png" alt="Effect of radiometric corrections on S1C IW1 data over northern Italy">
-  <figcaption>Effect of radiometric corrections on S1C IW1 data over Northern Italy</figcaption>
+  <figcaption>Effect of radiometric corrections on S1C IW1 data over Northern Italy, taking into account terrain-induced variations</figcaption>
 </figure>

@@ -1,6 +1,6 @@
 ---
 icon: material/console
-title: "CLI"
+title: "CLI and Configuration"
 tags:
     - CLI
     - processing
@@ -51,8 +51,17 @@ aux_cal = "path/to/AUX_CAL.SAFE"
 directory = "path/where/output/is/stored"
 
 [corrections]
-eap = true                      # whether to apply elevation antenna pattern correction
 processing_gain = true          # whether to apply processing gain correction
 absolute_calibration = true     # whether to apply absolute calibration correction
 denoising = false               # whether to apply thermal de-noising
+
+[corrections.eap]
+enabled = true                  # whether to apply elevation antenna pattern gain correction
+elevation_source = "dem"        # select "dem" in order to account for terrain-induced 
+                                # variations in elevation angleselect "ellipsoid" to approximate 
+                                # the Earth geoid with WGS84
 ```
+
+!!! Warning
+
+    If ``elevation_source`` is set to ``dem``, DEM tiles must be provided, see [elevation antenna pattern correction](corrections.md#elevation-antenna-pattern) for more information.
