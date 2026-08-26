@@ -54,7 +54,7 @@ def run(config: Config):
 
     Selected corrections
     --------------------
-    - Elevation antenna pattern gain        : {"ON" if config.corrections.eap else "OFF"}
+    - Elevation antenna pattern gain        : {"ON" if config.corrections.eap.enabled else "OFF"}
     - Absolute calibration factor           : {"ON" if config.corrections.absolute_calibration else "OFF"}
     - Processing gain                       : {"ON" if config.corrections.processing_gain else "OFF"}
     - Thermal denoising                     : {"ON" if config.corrections.denoising else "OFF"}
@@ -65,6 +65,8 @@ def run(config: Config):
     {aux_cal_path_new.name}
     """
     logger.info(summary)
+    if config.corrections.eap.enabled:
+        logger.info(f"Elevation source for EAP correction: {config.corrections.eap.elevation_source.value}")
 
     prod = open_product(l1_product_path)
     aux_cal_xml_path_new, aux_pp1_xml_path_new = get_aux_files(
@@ -126,7 +128,7 @@ def run(config: Config):
                 raster_file=raster_file_path, block_to_read=target_block, scaling_conversion=scaling_factor
             )
 
-            if config.corrections.eap:
+            if config.corrections.eap.enabled:
                 eap_gain_correction = compute_eap_gain_correction(
                     channel_metadata=metadata,
                     swath=swath,
@@ -134,6 +136,7 @@ def run(config: Config):
                     aux_cal_xml_path=aux_cal_xml_path_new,
                     az_block_size=az_block_size,
                     bc_num=bc_num,
+                    elevation_source=config.corrections.eap.elevation_source,
                 )
             else:
                 eap_gain_correction = 1

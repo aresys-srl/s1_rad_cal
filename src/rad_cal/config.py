@@ -7,13 +7,25 @@ Rad-Cal Tool configuration
 """
 
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
+
+
+class ElevationSource(str, Enum):
+    DEM = "dem"
+    ELLIPSOID = "ellipsoid"
+
+
+@dataclass
+class EAPCorrection:
+    enabled: bool = True
+    elevation_source: ElevationSource = ElevationSource.ELLIPSOID
 
 
 @dataclass
 class Corrections:
-    eap: bool = True
+    eap: EAPCorrection = field(default_factory=EAPCorrection)
     processing_gain: bool = True
     absolute_calibration: bool = True
     denoising: bool = False
@@ -30,8 +42,18 @@ class Config:
 
 
 def from_toml(path: str | Path) -> Config:
+
+    file = Path(path)
+    if not file.is_file():
+        raise FileNotFoundError(f"Input file {file} does not exist")
+    if file.suffix != ".toml":
+        raise ValueError(f"Input file {file} is not a .toml configuration file")
+
     with open(path, "rb") as f:
         cfg = tomllib.load(f)
+
+    corrections_cfg = cfg["corrections"]
+    eap_cfg = corrections_cfg["eap"]
 
     return Config(
         l1_product=Path(cfg["input"]["l1_product"]),
@@ -39,9 +61,17 @@ def from_toml(path: str | Path) -> Config:
         aux_cal=Path(cfg["input"]["aux_cal"]),
         output=Path(cfg["output"]["directory"]),
         corrections=Corrections(
-            eap=cfg["corrections"]["eap"],
-            processing_gain=cfg["corrections"]["processing_gain"],
-            absolute_calibration=cfg["corrections"]["absolute_calibration"],
-            denoising=cfg["corrections"]["denoising"],
+            eap=EAPCorrection(
+                enabled=eap_cfg["enabled"],
+                elevation_source=ElevationSource(
+                    eap_cfg.get(
+                        "elevation_source",
+                        ElevationSource.ELLIPSOID.value,
+                    )
+                ),
+            ),
+            processing_gain=corrections_cfg["processing_gain"],
+            absolute_calibration=corrections_cfg["absolute_calibration"],
+            denoising=corrections_cfg["denoising"],
         ),
     )
