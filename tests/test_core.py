@@ -394,6 +394,17 @@ class TestTerrainNormalComputation:
         ):
             compute_terrain_normal(dem, lat, lon)
 
+    def test_compute_terrain_normal_raises_for_non_monotonic_latitude(self):
+        dem = np.zeros((3, 3))
+        lat = np.array([45.0, 46.0, 44.0])
+        lon = np.array([10.0, 10.5, 11.0])
+
+        with pytest.raises(
+            ValueError,
+            match=(r"dem_lat_axis must be strictly monotonic"),
+        ):
+            compute_terrain_normal(dem, lat, lon)
+
     def test_compute_terrain_normal_raises_for_shape_mismatch(self):
         dem = np.zeros((3, 3))
         lat = np.array([45.0, 46.0])

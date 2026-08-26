@@ -146,7 +146,7 @@ def compute_terrain_normal(
     dem_lat_axis: npt.NDArray[np.floating],
     dem_lon_axis: npt.NDArray[np.floating],
 ) -> npt.NDArray[np.floating]:
-    """Computes ECEF terrain unit normal vectors.
+    """Computes ECEF outward terrain unit normal vectors.
 
     Parameters
     ----------
@@ -165,6 +165,8 @@ def compute_terrain_normal(
     if not np.all(np.diff(dem_lon_axis) > 0):
         msg = "dem_lon_axis must be monotonic increasing. If it crosses the antimeridian, unwrap it first"
         raise ValueError(msg)
+    if not (np.all(np.diff(dem_lat_axis) > 0) or np.all(np.diff(dem_lat_axis) < 0)):
+        raise ValueError("dem_lat_axis must be strictly monotonic")
     if dem_values.shape != (len(dem_lat_axis), len(dem_lon_axis)):
         msg = (
             f"dem_values shape {dem_values.shape} does not match "
@@ -178,7 +180,6 @@ def compute_terrain_normal(
     dh_dlat = np.gradient(dem_values, lat_rad, axis=0)
     dh_dlon = np.gradient(dem_values, lon_rad, axis=1)
 
-    # Use broadcasting instead of np.meshgrid to avoid allocating full lat/lon matrices
     cos_lat = np.cos(lat_rad)[:, None]
     sin_lat = np.sin(lat_rad)[:, None]
     cos_lon = np.cos(lon_rad)[None, :]
@@ -202,6 +203,7 @@ def compute_terrain_normal(
     dR_dlon_y = dlon_y + dh_y * dh_dlon
     dR_dlon_z = dlon_z + dh_z * dh_dlon
 
+    # cross product component-wise
     nx_raw = dR_dlon_y * dR_dlat_z - dR_dlon_z * dR_dlat_y
     ny_raw = dR_dlon_z * dR_dlat_x - dR_dlon_x * dR_dlat_z
     nz_raw = dR_dlon_x * dR_dlat_y - dR_dlon_y * dR_dlat_x
