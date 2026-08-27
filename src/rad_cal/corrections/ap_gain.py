@@ -80,11 +80,15 @@ def compute_eap_gain_correction(
             radians=False,
         )
     else:
+        time_idx = np.argmin(
+            abs(channel_metadata.antenna_pattern[swath].time_axis - azimuth_times[len(azimuth_times) // 2])
+        )
         look_angles = compute_look_angles(
             trajectory=channel_metadata.orbit,
             azimuth_time=azimuth_times[len(azimuth_times) // 2],
             range_times=range_times,
             look_direction=channel_metadata.dataset_info.side_looking,
+            geodetic_altitude=channel_metadata.antenna_pattern[swath].terrain_height[time_idx],
             radians=False,
         )
         look_angles = np.broadcast_to(look_angles, (len(azimuth_times), len(range_times)))
