@@ -26,11 +26,13 @@ directory = "output"
 [corrections]
 processing_gain = true
 absolute_calibration = true
-denoising = false
 
 [corrections.eap]
 enabled = true
 elevation_source = "dem"
+
+[corrections.denoising]
+enabled = true
 """
     )
 
@@ -47,7 +49,8 @@ elevation_source = "dem"
     assert cfg.corrections.eap.elevation_source is ElevationSource.DEM
     assert cfg.corrections.processing_gain is True
     assert cfg.corrections.absolute_calibration is True
-    assert cfg.corrections.denoising is False
+    assert cfg.corrections.denoising.enabled is True
+    assert cfg.corrections.denoising.external_noise_vector_folder is None
 
 
 def test_missing_correction_field(tmp_path):
@@ -63,7 +66,7 @@ aux_cal = "aux_cal.xml"
 [output]
 directory = "output"
 
-[corrections]
+[corrections.denoising]
 denoising = true
 """
     )
