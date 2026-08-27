@@ -18,3 +18,7 @@ z_{den} = \begin{cases}
       0 & \text{otherwise}
 \end{cases}
 $$
+
+Users can provide external noise vector files: to do so a folder containing **ALL** expected calibration noise xml files must be provided. 
+The folder must contain one xml file for each channel, with the same name of the original calibration noise xml file.
+See [configuration](CLI.md#configuration-file) for more information.
