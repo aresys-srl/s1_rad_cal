@@ -24,11 +24,17 @@ class EAPCorrection:
 
 
 @dataclass
+class Denoising:
+    enabled: bool = False
+    external_noise_vector_folder: Path | None = None
+
+
+@dataclass
 class Corrections:
     eap: EAPCorrection = field(default_factory=EAPCorrection)
     processing_gain: bool = True
     absolute_calibration: bool = True
-    denoising: bool = False
+    denoising: Denoising = field(default_factory=Denoising)
 
 
 @dataclass
@@ -54,6 +60,7 @@ def from_toml(path: str | Path) -> Config:
 
     corrections_cfg = cfg["corrections"]
     eap_cfg = corrections_cfg["eap"]
+    denoising_cfg = corrections_cfg["denoising"]
 
     return Config(
         l1_product=Path(cfg["input"]["l1_product"]),
@@ -72,6 +79,12 @@ def from_toml(path: str | Path) -> Config:
             ),
             processing_gain=corrections_cfg["processing_gain"],
             absolute_calibration=corrections_cfg["absolute_calibration"],
-            denoising=corrections_cfg["denoising"],
+            denoising=Denoising(
+                enabled=denoising_cfg["enabled"],
+                external_noise_vector_folder=denoising_cfg.get(
+                    "ext_noise_vector_folder",
+                    None,
+                ),
+            ),
         ),
     )

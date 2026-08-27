@@ -82,6 +82,14 @@ def run(config: Config):
         logger.info(f"Processing channel {channel}")
         channel_raster_file = prod_folder.get_channel_data(channel=ch_id)
         metadata_file, raster_file_path, cal_file, noise_path = prod.get_files_from_channel_name(channel)
+        ext_noise_vector_dir = config.corrections.denoising.external_noise_vector_folder
+        if ext_noise_vector_dir is not None:
+            noise_path = Path(ext_noise_vector_dir).joinpath(noise_path.name)
+            if not noise_path.is_file():
+                raise FileNotFoundError(
+                    f"{noise_path.name} noise file does not exist in external noise folder {ext_noise_vector_dir}"
+                )
+            logger.info(f"Using external noise calibration file: {noise_path.name}")
         scaling_factor = read_channel_calibration(xml_path=cal_file)
         metadata = read_channel_metadata(xml_path=metadata_file)
         list_azimuth_noise_vectors, list_range_noise_vectors = read_channel_noise_vectors(noise_path)
@@ -158,7 +166,7 @@ def run(config: Config):
             else:
                 abs_cal_correction = 1
 
-            if config.corrections.denoising:
+            if config.corrections.denoising.enabled:
                 target_area = apply_denoising_correction(
                     target_area=target_area,
                     swath=swath,

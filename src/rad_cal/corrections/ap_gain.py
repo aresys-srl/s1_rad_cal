@@ -161,7 +161,6 @@ def compute_antenna_pattern_gain_from_metadata(
         antenna_pattern,
     )
     return antenna_pattern_reinterp
-    # return 20 * np.log10(abs(antenna_pattern_reinterp))
 
 
 def get_elevation_antenna_pattern_from_aux_cal(
