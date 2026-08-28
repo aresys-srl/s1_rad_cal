@@ -8,19 +8,13 @@ Rad-Cal Tool configuration
 
 import tomllib
 from dataclasses import dataclass, field
-from enum import Enum
 from pathlib import Path
-
-
-class ElevationSource(str, Enum):
-    DEM = "dem"
-    ELLIPSOID = "ellipsoid"
 
 
 @dataclass
 class EAPCorrection:
     enabled: bool = True
-    elevation_source: ElevationSource = ElevationSource.ELLIPSOID
+    dem: Path | None = None
 
 
 @dataclass
@@ -61,6 +55,10 @@ def from_toml(path: str | Path) -> Config:
     corrections_cfg = cfg["corrections"]
     eap_cfg = corrections_cfg["eap"]
     denoising_cfg = corrections_cfg["denoising"]
+    eap_dem = eap_cfg.get("dem", None)
+
+    if eap_dem is not None:
+        eap_dem = Path(eap_dem)
 
     return Config(
         l1_product=Path(cfg["input"]["l1_product"]),
@@ -70,12 +68,7 @@ def from_toml(path: str | Path) -> Config:
         corrections=Corrections(
             eap=EAPCorrection(
                 enabled=eap_cfg["enabled"],
-                elevation_source=ElevationSource(
-                    eap_cfg.get(
-                        "elevation_source",
-                        ElevationSource.ELLIPSOID.value,
-                    )
-                ),
+                dem=eap_dem,
             ),
             processing_gain=corrections_cfg["processing_gain"],
             absolute_calibration=corrections_cfg["absolute_calibration"],

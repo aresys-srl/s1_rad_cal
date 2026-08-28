@@ -15,8 +15,6 @@ from lxml import etree
 from perseo_core.geometry.angles import compute_look_angles
 from perseo_core.timing.precise_datetime import PreciseDateTime
 
-from rad_cal import GETASSE_DEM_FOLDER
-from rad_cal.config import ElevationSource
 from rad_cal.core.angles import compute_terrain_corrected_look_angles
 from rad_cal.core.common import load_dem_from_sar_times
 from rad_cal.corrections.common import apply_roll_correction
@@ -29,7 +27,7 @@ def compute_eap_gain_correction(
     aux_cal_xml_path: Path | str,
     az_block_size: npt.NDArray[np.integer],
     bc_num: int,
-    elevation_source: ElevationSource,
+    dem: Path | None = None,
 ) -> npt.NDArray[np.floating]:
     """Compute elevation antenna pattern gain correction [dB] for each pixel of the current azimuth block
 
@@ -47,8 +45,8 @@ def compute_eap_gain_correction(
         Azimuth lines of each azimuth block
     bc_num : int
         Block center index
-    elevation_source : ElevationSource
-        Terrain elevation source
+    dem : Path | None, optional
+        path to DEM tiles folder, by default None
 
     Returns
     -------
@@ -61,9 +59,9 @@ def compute_eap_gain_correction(
     ]
     range_times = channel_metadata.raster_info.samples.axis
 
-    if elevation_source is ElevationSource.DEM:
+    if dem is not None:
         burst_area_dem = load_dem_from_sar_times(
-            dem=GETASSE_DEM_FOLDER,
+            dem=dem,
             trajectory=channel_metadata.orbit,
             range_times=range_times,
             azimuth_times=azimuth_times,

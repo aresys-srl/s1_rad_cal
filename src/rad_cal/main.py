@@ -66,7 +66,7 @@ def run(config: Config):
     """
     logger.info(summary)
     if config.corrections.eap.enabled:
-        logger.info(f"Elevation source for EAP correction: {config.corrections.eap.elevation_source.value}")
+        logger.info(f"DEM source for EAP correction: {config.corrections.eap.dem}")
 
     prod = open_product(l1_product_path)
     aux_cal_xml_path_new, aux_pp1_xml_path_new = get_aux_files(
@@ -144,7 +144,7 @@ def run(config: Config):
                     aux_cal_xml_path=aux_cal_xml_path_new,
                     az_block_size=az_block_size,
                     bc_num=bc_num,
-                    elevation_source=config.corrections.eap.elevation_source,
+                    dem=config.corrections.eap.dem,
                 )
             else:
                 eap_gain_correction = 1
