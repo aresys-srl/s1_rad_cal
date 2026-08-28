@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from rad_cal.config import Config, ElevationSource, from_toml
+from rad_cal.config import Config, from_toml
 
 
 def test_from_toml(tmp_path):
@@ -29,7 +29,7 @@ absolute_calibration = true
 
 [corrections.eap]
 enabled = true
-elevation_source = "dem"
+dem = "path/to/dem"
 
 [corrections.denoising]
 enabled = true
@@ -46,7 +46,7 @@ enabled = true
     assert cfg.output == Path("output")
 
     assert cfg.corrections.eap.enabled is True
-    assert cfg.corrections.eap.elevation_source is ElevationSource.DEM
+    assert cfg.corrections.eap.dem == Path("path/to/dem")
     assert cfg.corrections.processing_gain is True
     assert cfg.corrections.absolute_calibration is True
     assert cfg.corrections.denoising.enabled is True
