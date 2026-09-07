@@ -26,6 +26,7 @@ from rad_cal.corrections.ap_gain import compute_eap_gain_correction
 from rad_cal.corrections.common import get_aux_files
 from rad_cal.corrections.denoising import apply_denoising_correction
 from rad_cal.corrections.proc_gain import compute_processing_gain_correction, get_aux_pp1_xml_path_from_product
+from rad_cal.corrections.terrain_flattening import compute_terrain_flattening_correction
 from rad_cal.utils import create_pf_metadata
 
 logger = logging.getLogger(__name__)
@@ -57,6 +58,7 @@ def run(config: Config):
     - Elevation antenna pattern gain        : {"ON" if config.corrections.eap.enabled else "OFF"}
     - Absolute calibration factor           : {"ON" if config.corrections.absolute_calibration else "OFF"}
     - Processing gain                       : {"ON" if config.corrections.processing_gain else "OFF"}
+    - Terrain flattening                    : {"ON" if config.corrections.terrain_flattening.enabled else "OFF"}
     - Thermal denoising                     : {"ON" if config.corrections.denoising else "OFF"}
 
     Auxiliary files in use
@@ -67,6 +69,8 @@ def run(config: Config):
     logger.info(summary)
     if config.corrections.eap.enabled:
         logger.info(f"DEM source for EAP correction: {config.corrections.eap.dem}")
+    if config.corrections.terrain_flattening.enabled:
+        logger.info(f"DEM source for terrain flattening: {config.corrections.terrain_flattening.dem}")
 
     prod = open_product(l1_product_path)
     aux_cal_xml_path_new, aux_pp1_xml_path_new = get_aux_files(
@@ -165,6 +169,16 @@ def run(config: Config):
                 )
             else:
                 abs_cal_correction = 1
+
+            if config.corrections.terrain_flattening.enabled:
+                terrain_flattening_correction = compute_terrain_flattening_correction(
+                    channel_metadata=metadata,
+                    swath=swath,
+                    az_block_size=az_block_size,
+                    bc_num=bc_num,
+                    dem=config.corrections.terrain_flattening.dem,
+                )
+                target_area = target_area * terrain_flattening_correction
 
             if config.corrections.denoising.enabled:
                 target_area = apply_denoising_correction(

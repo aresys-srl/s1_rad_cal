@@ -18,6 +18,12 @@ class EAPCorrection:
 
 
 @dataclass
+class TerrainFlattening:
+    enabled: bool = False
+    dem: Path | None = None
+
+
+@dataclass
 class Denoising:
     enabled: bool = False
     external_noise_vector_folder: Path | None = None
@@ -28,6 +34,7 @@ class Corrections:
     eap: EAPCorrection = field(default_factory=EAPCorrection)
     processing_gain: bool = True
     absolute_calibration: bool = True
+    terrain_flattening: TerrainFlattening = field(default_factory=TerrainFlattening)
     denoising: Denoising = field(default_factory=Denoising)
 
 
@@ -54,11 +61,16 @@ def from_toml(path: str | Path) -> Config:
 
     corrections_cfg = cfg["corrections"]
     eap_cfg = corrections_cfg["eap"]
+    terrain_flattening_cfg = corrections_cfg["terrain_flattening"]
     denoising_cfg = corrections_cfg["denoising"]
+
     eap_dem = eap_cfg.get("dem", None)
+    terrain_flattening_dem = terrain_flattening_cfg.get("dem", None)
 
     if eap_dem is not None:
         eap_dem = Path(eap_dem)
+    if terrain_flattening_dem is not None:
+        terrain_flattening_dem = Path(terrain_flattening_dem)
 
     return Config(
         l1_product=Path(cfg["input"]["l1_product"]),
@@ -72,6 +84,10 @@ def from_toml(path: str | Path) -> Config:
             ),
             processing_gain=corrections_cfg["processing_gain"],
             absolute_calibration=corrections_cfg["absolute_calibration"],
+            terrain_flattening=TerrainFlattening(
+                enabled=terrain_flattening_cfg["enabled"],
+                dem=terrain_flattening_dem,
+            ),
             denoising=Denoising(
                 enabled=denoising_cfg["enabled"],
                 external_noise_vector_folder=denoising_cfg.get(
