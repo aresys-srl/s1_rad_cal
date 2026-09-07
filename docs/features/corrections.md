@@ -75,6 +75,18 @@ $$
 \text{EAP correction} = \sqrt{\left|\frac{\text{original EAP}}{\text{updated EAP}}\right|} e^{\mathrm{i} \phase{\frac{\text{original EAP}}{\text{updated EAP}}}}
 $$
 
+## Terrain Flattening
+
+The local incidence angle $\theta_{LIA}$, i.e. the angle between the radar beam and the line perpendicular to the local terrain surface, can affect the radar backscatter.
+This software can normalize backscatter values to account for terrain induced variations in local incidence angle in a procedure that is sometime referred to as *terrain flattening*.
+As it stands, a "naive" terrain flattening, that does not take into account effect such as *layover* or *shadowing* is implemented:
+first the software can project the digital elevation model (DEM) into SAR coordinates so that for each raster pixel a local incidence angle is computed.
+Then, being $z$ the calibrated SLC complex pixel value, the terrain-flattened SLC values is given by:
+
+$$
+z_{flattened} = z \cdot \tan{\theta_{LIA}}
+$$
+
 ## Examples
 
 <figure>

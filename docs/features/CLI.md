@@ -19,7 +19,7 @@ The main command line tool that can be accessed using the ``rad-cal`` command in
 Rad-cal tool command line can be invoked in the terminal session as:
 
 ``` bash title="CLI Entry Point"
-rad-cal [--config/-c] [--help/-h]
+rad-cal [--config/-c] [--help]
 ```
 
 This is the entry point for the console script. The configuration needed to perform the analysis must be provided
@@ -56,16 +56,22 @@ absolute_calibration = true
 
 [corrections.eap]
 enabled = true
-dem = "path/to/dem/tiles/folder" # (1)!    
+dem = "path/to/dem/tiles/folder" # (1)!  
+
+[corrections.terrain_flattening]
+enabled = true
+dem = "path/to/dem/tiles/folder" # (2)! 
 
 [corrections.denoising]
 enabled = true
-ext_noise_vector_folder = "optional/path/to/folder/containing/noise/files" # (2)!
+ext_noise_vector_folder = "optional/path/to/folder/containing/noise/files" # (3)!
 ```
 
-1.  Provide the path to dem tiles, otherwise remove to approximate the Earth geoid with WGS84
+1.  Provide the path to dem tiles, otherwise remove to approximate the Earth geoid with possibly inflated WGS84
 
-2.  Optional, remove to use noise calibration files present in the Sentinel-1 L1 product
+2.  Provide the path to dem tiles, otherwise remove to approximate the Earth geoid with possibly inflated WGS84
+
+3.  Optional, remove to use noise calibration files present in the Sentinel-1 L1 product
 
 
 !!! Warning
