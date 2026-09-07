@@ -20,6 +20,30 @@ def apply_denoising_correction(
     scaling_conversion: float,
     is_grd: bool,
 ) -> npt.NDArray[np.complex64]:
+    """Apply thermal denoising vectors to ``target_area``
+
+    Parameters
+    ----------
+    target_area : npt.NDArray[np.complex64]
+        target raster area to which denoising is applied
+    swath : str
+        swath name
+    azimuth_indexes : tuple[int, int]
+        indexes of the first and last azimuth line of the current block
+    azimuth_noise_vectors : list[S1AzimuthNoiseVector] | None
+        list of S1 azimuth noise vectors
+    range_noise_vectors : list[S1RangeNoiseVector]
+        list of S1 range noise vectors
+    scaling_conversion : float
+        radiometric data scaling factor
+    is_grd : bool
+        boolean to flag GRD product
+
+    Returns
+    -------
+    npt.NDArray[np.complex64]
+        denoised target area
+    """
     noise_vectors = get_noise_vectors(
         swath=swath,
         azimuth_indexes=azimuth_indexes,
