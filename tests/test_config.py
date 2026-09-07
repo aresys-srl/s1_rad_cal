@@ -31,6 +31,9 @@ absolute_calibration = true
 enabled = true
 dem = "path/to/dem"
 
+[corrections.terrain_flattening]
+enabled = false
+
 [corrections.denoising]
 enabled = true
 """
@@ -51,6 +54,8 @@ enabled = true
     assert cfg.corrections.absolute_calibration is True
     assert cfg.corrections.denoising.enabled is True
     assert cfg.corrections.denoising.external_noise_vector_folder is None
+    assert cfg.corrections.terrain_flattening.enabled is False
+    assert cfg.corrections.terrain_flattening.dem is None
 
 
 def test_missing_correction_field(tmp_path):
