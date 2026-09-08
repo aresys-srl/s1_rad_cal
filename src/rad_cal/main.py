@@ -60,7 +60,7 @@ def run(config: Config):
     - Elevation antenna pattern gain        : {"ON" if config.corrections.eap.enabled else "OFF"}
     - Absolute calibration factor           : {"ON" if config.corrections.absolute_calibration else "OFF"}
     - Processing gain                       : {"ON" if config.corrections.processing_gain else "OFF"}
-    - Thermal denoising                     : {"ON" if config.corrections.denoising else "OFF"}
+    - Thermal denoising                     : {"ON" if config.corrections.denoising.enabled else "OFF"}
 
     Auxiliary files in use
     ----------------------
