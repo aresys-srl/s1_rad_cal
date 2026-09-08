@@ -18,6 +18,47 @@ from rad_cal.core.angles import compute_terrain_corrected_incidence_angles
 from rad_cal.core.common import load_dem_from_sar_times
 
 
+def _compute_incidence_angles(
+    channel_metadata: S1ChannelMetadata,
+    swath: str,
+    range_times: npt.NDArray,
+    azimuth_times: npt.NDArray,
+    dem: Path | None,
+) -> npt.NDArray[np.floating]:
+    """Compute incidence angles for a SAR area."""
+    if dem is not None:
+        burst_area_dem = load_dem_from_sar_times(
+            dem=dem,
+            trajectory=channel_metadata.orbit,
+            range_times=range_times,
+            azimuth_times=azimuth_times,
+            look_direction=channel_metadata.dataset_info.side_looking,
+        )
+
+        incidence_angles = compute_terrain_corrected_incidence_angles(
+            dem_values=burst_area_dem.values,
+            dem_lat_axis=burst_area_dem.lat.values,
+            dem_lon_axis=burst_area_dem.lon.values,
+            trajectory=channel_metadata.orbit,
+            range_times=range_times,
+            azimuth_times=azimuth_times,
+        )
+    else:
+        time_idx = np.argmin(
+            abs(channel_metadata.antenna_pattern[swath].time_axis - azimuth_times[len(azimuth_times) // 2])
+        )
+        incidence_angles = compute_incidence_angles(
+            trajectory=channel_metadata.orbit,
+            azimuth_time=azimuth_times[len(azimuth_times) // 2],
+            range_times=range_times,
+            look_direction=channel_metadata.dataset_info.side_looking,
+            geodetic_altitude=channel_metadata.antenna_pattern[swath].terrain_height[time_idx],
+        )
+        incidence_angles = np.broadcast_to(incidence_angles, (len(azimuth_times), len(range_times)))
+
+    return incidence_angles
+
+
 def radiometric_quantity_conversion(
     target_area: npt.NDArray[np.integer],
     channel_metadata: S1ChannelMetadata,
@@ -61,38 +102,12 @@ def radiometric_quantity_conversion(
     ]
     range_times = channel_metadata.raster_info.samples.axis
 
-    if dem is not None:
-        burst_area_dem = load_dem_from_sar_times(
-            dem=dem,
-            trajectory=channel_metadata.orbit,
-            range_times=range_times,
-            azimuth_times=azimuth_times,
-            look_direction=channel_metadata.dataset_info.side_looking,
-        )
-
-        incidence_angles = compute_terrain_corrected_incidence_angles(
-            dem_values=burst_area_dem.values,
-            dem_lat_axis=burst_area_dem.lat.values,
-            dem_lon_axis=burst_area_dem.lon.values,
-            trajectory=channel_metadata.orbit,
-            range_times=range_times,
-            azimuth_times=azimuth_times,
-        )
-    else:
-        time_idx = np.argmin(
-            abs(channel_metadata.antenna_pattern[swath].time_axis - azimuth_times[len(azimuth_times) // 2])
-        )
-        incidence_angles = compute_incidence_angles(
-            trajectory=channel_metadata.orbit,
-            azimuth_time=azimuth_times[len(azimuth_times) // 2],
-            range_times=range_times,
-            look_direction=channel_metadata.dataset_info.side_looking,
-            geodetic_altitude=channel_metadata.antenna_pattern[swath].terrain_height[time_idx],
-        )
-        incidence_angles = np.broadcast_to(incidence_angles, (len(azimuth_times), len(range_times)))
+    incidence_angles = _compute_incidence_angles(
+        channel_metadata=channel_metadata, swath=swath, range_times=range_times, azimuth_times=azimuth_times, dem=dem
+    )
 
     if output_quantity == SARRadiometricQuantity.SIGMA_NOUGHT:
         return target_area * np.sqrt(np.sin(incidence_angles))
     elif output_quantity == SARRadiometricQuantity.GAMMA_NOUGHT:
         return target_area * np.sqrt(np.tan(incidence_angles))
-    raise RuntimeError(f"Invalid output quantity {output_quantity.name} provided")
+    raise ValueError(f"Unsopported output quantity {output_quantity.name} provided")
