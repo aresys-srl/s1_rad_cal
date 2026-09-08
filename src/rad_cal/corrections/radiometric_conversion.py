@@ -68,7 +68,12 @@ def radiometric_quantity_conversion(
     output_quantity: SARRadiometricQuantity,
     dem: Path | None = None,
 ) -> npt.NDArray[np.floating]:
-    """Convert data from beta naught to ``output_quantity``.
+    """Convert a complex SLC calibrated to beta naught amplitude to the requested  ``output_quantity``.
+    The returned complex data satisfy:
+
+        abs(slc_sigma)**2 = sigma0
+        abs(slc_gamma)**2 = gamma0
+
     If ``dem`` is provided, local incidence angles are used for conversion,
     otherwise the incidence angles are computed from the inflated ellipsoid.
 
