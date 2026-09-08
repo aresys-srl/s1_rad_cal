@@ -207,3 +207,4 @@ def run(config: Config):
                 start_point=(az_block_size[bc_num] * bc_num, 0),
             )
         write_metadata(pf_channel_mtd, metadata_file=prod_folder.get_channel_metadata(channel=ch_id))
+    logger.info(f"Results saved to {config.output}")
