@@ -35,7 +35,7 @@ The .toml configuration file is organized in sections:
 
 -**input**: here the path to the needed input files must be provided
 
--**output**: here the path to the output folder must be provided
+-**output**: here the path to the output folder must be provided, moreover user can decide the output radiometric quantity and can provide a DEM for radiometric quantity conversion.
 
 -**corrections**: here the user can select which corrections to apply
 
@@ -49,6 +49,8 @@ aux_cal = "path/to/AUX_CAL.SAFE"
 
 [output]
 directory = "path/where/output/is/stored"
+radiometric_quantity = "beta" # (1)!
+incidence_angles_dem = "optional/path/to/dem/tiles/folder" # (2)!
 
 [corrections]
 processing_gain = true
@@ -56,22 +58,20 @@ absolute_calibration = true
 
 [corrections.eap]
 enabled = true
-dem = "path/to/dem/tiles/folder" # (1)!  
-
-[corrections.terrain_flattening]
-enabled = true
-dem = "path/to/dem/tiles/folder" # (2)! 
+dem = "optional/path/to/dem/tiles/folder" # (3)!  
 
 [corrections.denoising]
 enabled = true
-ext_noise_vector_folder = "optional/path/to/folder/containing/noise/files" # (3)!
+ext_noise_vector_folder = "optional/path/to/folder/containing/noise/files" # (4)!
 ```
 
-1.  Provide the path to dem tiles, otherwise remove to approximate the Earth geoid with possibly inflated WGS84
+1. Optional, the valid radiometric quantities are ``beta``, ``sigma``, ``gamma``. By default ``beta``
 
-2.  Provide the path to dem tiles, otherwise remove to approximate the Earth geoid with possibly inflated WGS84
+2.  Provide the path to dem tiles to use the local incidence angle for radiometric quantity conversion, otherwise remove to use the incidence angle computed on the inflated WGS84 Earth geoid
 
-3.  Optional, remove to use noise calibration files present in the Sentinel-1 L1 product
+3.  Provide the path to dem tiles, otherwise remove to approximate the Earth geoid with possibly inflated WGS84
+
+4.  Optional, remove to use noise calibration files present in the Sentinel-1 L1 product
 
 
 !!! Warning
