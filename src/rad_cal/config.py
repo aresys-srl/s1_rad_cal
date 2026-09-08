@@ -10,16 +10,12 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
+
 
 @dataclass
 class EAPCorrection:
     enabled: bool = True
-    dem: Path | None = None
-
-
-@dataclass
-class TerrainFlattening:
-    enabled: bool = False
     dem: Path | None = None
 
 
@@ -34,7 +30,6 @@ class Corrections:
     eap: EAPCorrection = field(default_factory=EAPCorrection)
     processing_gain: bool = True
     absolute_calibration: bool = True
-    terrain_flattening: TerrainFlattening = field(default_factory=TerrainFlattening)
     denoising: Denoising = field(default_factory=Denoising)
 
 
@@ -44,6 +39,8 @@ class Config:
     aux_pp1: Path
     aux_cal: Path
     output: Path
+    output_quantity: SARRadiometricQuantity
+    incidence_angles_dem: Path | None
 
     corrections: Corrections
 
@@ -61,22 +58,26 @@ def from_toml(path: str | Path) -> Config:
 
     corrections_cfg = cfg["corrections"]
     eap_cfg = corrections_cfg["eap"]
-    terrain_flattening_cfg = corrections_cfg["terrain_flattening"]
     denoising_cfg = corrections_cfg["denoising"]
 
-    eap_dem = eap_cfg.get("dem", None)
-    terrain_flattening_dem = terrain_flattening_cfg.get("dem", None)
+    output_cfg = cfg["output"]
 
+    eap_dem = eap_cfg.get("dem", None)
+    incidence_angles_dem = output_cfg.get("incidence_angles_dem", None)
     if eap_dem is not None:
         eap_dem = Path(eap_dem)
-    if terrain_flattening_dem is not None:
-        terrain_flattening_dem = Path(terrain_flattening_dem)
+    if incidence_angles_dem is not None:
+        incidence_angles_dem = Path(incidence_angles_dem)
+
+    radiometric_quantity = output_cfg.get("radiometric_quantity", "beta")
 
     return Config(
         l1_product=Path(cfg["input"]["l1_product"]),
         aux_pp1=Path(cfg["input"]["aux_pp1"]),
         aux_cal=Path(cfg["input"]["aux_cal"]),
         output=Path(cfg["output"]["directory"]),
+        output_quantity=SARRadiometricQuantity[f"{radiometric_quantity.upper()}_NOUGHT"],
+        incidence_angles_dem=incidence_angles_dem,
         corrections=Corrections(
             eap=EAPCorrection(
                 enabled=eap_cfg["enabled"],
@@ -84,10 +85,6 @@ def from_toml(path: str | Path) -> Config:
             ),
             processing_gain=corrections_cfg["processing_gain"],
             absolute_calibration=corrections_cfg["absolute_calibration"],
-            terrain_flattening=TerrainFlattening(
-                enabled=terrain_flattening_cfg["enabled"],
-                dem=terrain_flattening_dem,
-            ),
             denoising=Denoising(
                 enabled=denoising_cfg["enabled"],
                 external_noise_vector_folder=denoising_cfg.get(

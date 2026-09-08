@@ -12,6 +12,7 @@ import arepytools.io.metadata as mtd
 import arepytools.timing.precisedatetime as att
 from arepytools.io import create_new_metadata
 from eo_products.sentinel1.utilities import S1ChannelMetadata
+from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
 
 
 def _compile_dataset_info(arepytools_dataset_info: mtd.DataSetInfo, metadata: S1ChannelMetadata) -> mtd.DataSetInfo:
@@ -42,7 +43,9 @@ def _compile_dataset_info(arepytools_dataset_info: mtd.DataSetInfo, metadata: S1
     return arepytools_dataset_info
 
 
-def create_pf_metadata(metadata: S1ChannelMetadata, channel_raster_file: Path, swath: str) -> mtd.MetaData:
+def create_pf_metadata(
+    metadata: S1ChannelMetadata, channel_raster_file: Path, swath: str, output_quantity: SARRadiometricQuantity
+) -> mtd.MetaData:
     """Create product folder metadata DataSetInfo object"""
     pf_raster_info = mtd.RasterInfo(
         lines=metadata.raster_info.lines.length,
@@ -80,7 +83,7 @@ def create_pf_metadata(metadata: S1ChannelMetadata, channel_raster_file: Path, s
     else:
         acq_mode = mode
 
-    pf_dataset_info = mtd.DataSetInfo(acquisition_mode_i=acq_mode, image_quantity="BETA")
+    pf_dataset_info = mtd.DataSetInfo(acquisition_mode_i=acq_mode, image_quantity=output_quantity.name.split("_")[0])
     pf_dataset_info = _compile_dataset_info(arepytools_dataset_info=pf_dataset_info, metadata=metadata)
     pf_state_vector = mtd.StateVectors(
         position_vector=metadata.state_vectors.positions,

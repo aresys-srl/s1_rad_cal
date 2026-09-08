@@ -26,7 +26,7 @@ from rad_cal.corrections.ap_gain import compute_eap_gain_correction
 from rad_cal.corrections.common import get_aux_files
 from rad_cal.corrections.denoising import apply_denoising_correction
 from rad_cal.corrections.proc_gain import compute_processing_gain_correction, get_aux_pp1_xml_path_from_product
-from rad_cal.corrections.terrain_flattening import compute_terrain_flattening_correction
+from rad_cal.corrections.radiometric_conversion import radiometric_quantity_conversion
 from rad_cal.utils import create_pf_metadata
 
 logger = logging.getLogger(__name__)
@@ -52,13 +52,14 @@ def run(config: Config):
 
     summary = f"""
     Recalibrating {l1_product_path.name}
+    Selected output radiometric quantity {config.output_quantity.name}
+    Incidence angles source : {"ellipsoid" if config.incidence_angles_dem is None else config.incidence_angles_dem}
 
     Selected corrections
     --------------------
     - Elevation antenna pattern gain        : {"ON" if config.corrections.eap.enabled else "OFF"}
     - Absolute calibration factor           : {"ON" if config.corrections.absolute_calibration else "OFF"}
     - Processing gain                       : {"ON" if config.corrections.processing_gain else "OFF"}
-    - Terrain flattening                    : {"ON" if config.corrections.terrain_flattening.enabled else "OFF"}
     - Thermal denoising                     : {"ON" if config.corrections.denoising else "OFF"}
 
     Auxiliary files in use
@@ -69,8 +70,6 @@ def run(config: Config):
     logger.info(summary)
     if config.corrections.eap.enabled:
         logger.info(f"DEM source for EAP correction: {config.corrections.eap.dem}")
-    if config.corrections.terrain_flattening.enabled:
-        logger.info(f"DEM source for terrain flattening: {config.corrections.terrain_flattening.dem}")
 
     prod = open_product(l1_product_path)
     aux_cal_xml_path_new, aux_pp1_xml_path_new = get_aux_files(
@@ -94,6 +93,8 @@ def run(config: Config):
                     f"{noise_path.name} noise file does not exist in external noise folder {ext_noise_vector_dir}"
                 )
             logger.info(f"Using external noise calibration file: {noise_path.name}")
+
+        # Always start from beta naught, data is converted later if needed
         scaling_factor = read_channel_calibration(xml_path=cal_file)
         metadata = read_channel_metadata(xml_path=metadata_file)
         list_azimuth_noise_vectors, list_range_noise_vectors = read_channel_noise_vectors(noise_path)
@@ -122,7 +123,12 @@ def run(config: Config):
             blocks_centers_px = [(px, mid_range_pixel) for px in blocks_centers_px]
             az_block_size = [az_block_size] * blocks_num
 
-        pf_channel_mtd = create_pf_metadata(metadata=metadata, channel_raster_file=channel_raster_file, swath=swath)
+        pf_channel_mtd = create_pf_metadata(
+            metadata=metadata,
+            channel_raster_file=channel_raster_file,
+            swath=swath,
+            output_quantity=config.output_quantity,
+        )
 
         for bc_num, center in enumerate(blocks_centers_px):
             logger.info(f"Processing block {bc_num + 1} of {blocks_num}")
@@ -170,15 +176,15 @@ def run(config: Config):
             else:
                 abs_cal_correction = 1
 
-            if config.corrections.terrain_flattening.enabled:
-                terrain_flattening_correction = compute_terrain_flattening_correction(
-                    channel_metadata=metadata,
-                    swath=swath,
-                    az_block_size=az_block_size,
-                    bc_num=bc_num,
-                    dem=config.corrections.terrain_flattening.dem,
-                )
-                target_area = target_area * terrain_flattening_correction
+            target_area = radiometric_quantity_conversion(
+                target_area=target_area,
+                channel_metadata=metadata,
+                swath=swath,
+                az_block_size=az_block_size,
+                bc_num=bc_num,
+                output_quantity=config.output_quantity,
+                dem=config.incidence_angles_dem,
+            )
 
             if config.corrections.denoising.enabled:
                 target_area = apply_denoising_correction(

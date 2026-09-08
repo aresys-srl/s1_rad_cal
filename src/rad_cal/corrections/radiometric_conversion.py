@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 
 """
-Terrain Flattening
-------------------
+Radiometric Conversion
+----------------------
 """
 
 from pathlib import Path
@@ -12,22 +12,29 @@ import numpy as np
 import numpy.typing as npt
 from eo_products.sentinel1.utilities import S1ChannelMetadata
 from perseo_core.geometry.angles import compute_incidence_angles
+from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
 
 from rad_cal.core.angles import compute_terrain_corrected_incidence_angles
 from rad_cal.core.common import load_dem_from_sar_times
 
 
-def compute_terrain_flattening_correction(
+def radiometric_quantity_conversion(
+    target_area: npt.NDArray[np.integer],
     channel_metadata: S1ChannelMetadata,
     swath: str,
     az_block_size: npt.NDArray[np.integer],
     bc_num: int,
+    output_quantity: SARRadiometricQuantity,
     dem: Path | None = None,
 ) -> npt.NDArray[np.floating]:
-    """Compute terrain flattening correction for each pixel of the current block
+    """Convert data from beta naught to ``output_quantity``.
+    If ``dem`` is provided, local incidence angles are used for conversion,
+    otherwise the incidence angles are computed from the inflated ellipsoid.
 
     Parameters
     ----------
+    target_area : npt.NDArray
+        target area data in beta naught
     channel_metadata : S1ChannelMetadata
         S1ChannelMetadata object
     swath : str
@@ -36,14 +43,19 @@ def compute_terrain_flattening_correction(
         Azimuth lines of each azimuth block
     bc_num : int
         Block center index
+    output_quantity : SARRadiometricQuantity
+        output radiometric quantity
     dem : Path | None, optional
         path to DEM tiles folder, by default None
 
     Returns
     -------
     npt.NDArray[np.floating]
-        terrain flattening correction as an array of shape (``len(azimuth_times)``, ``len(range_times)``)
+        converted target area data
     """
+    if output_quantity == SARRadiometricQuantity.BETA_NOUGHT:
+        return target_area
+
     azimuth_times = channel_metadata.raster_info.lines.axis[
         int(np.sum(az_block_size[:bc_num])) : int(np.sum(az_block_size[:bc_num]) + az_block_size[bc_num])
     ]
@@ -79,4 +91,8 @@ def compute_terrain_flattening_correction(
         )
         incidence_angles = np.broadcast_to(incidence_angles, (len(azimuth_times), len(range_times)))
 
-    return np.tan(incidence_angles)
+    if output_quantity == SARRadiometricQuantity.SIGMA_NOUGHT:
+        return target_area * np.sqrt(np.sin(incidence_angles))
+    elif output_quantity == SARRadiometricQuantity.GAMMA_NOUGHT:
+        return target_area * np.sqrt(np.tan(incidence_angles))
+    raise RuntimeError(f"Invalid output quantity {output_quantity.name} provided")
