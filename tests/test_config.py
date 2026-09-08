@@ -6,6 +6,7 @@
 from pathlib import Path
 
 import pytest
+from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
 
 from rad_cal.config import Config, from_toml
 
@@ -22,6 +23,8 @@ aux_cal = "aux_cal.xml"
 
 [output]
 directory = "output"
+radiometric_quantity = "beta"
+incidence_angles_dem = "path/to/dem"
 
 [corrections]
 processing_gain = true
@@ -30,9 +33,6 @@ absolute_calibration = true
 [corrections.eap]
 enabled = true
 dem = "path/to/dem"
-
-[corrections.terrain_flattening]
-enabled = false
 
 [corrections.denoising]
 enabled = true
@@ -54,8 +54,7 @@ enabled = true
     assert cfg.corrections.absolute_calibration is True
     assert cfg.corrections.denoising.enabled is True
     assert cfg.corrections.denoising.external_noise_vector_folder is None
-    assert cfg.corrections.terrain_flattening.enabled is False
-    assert cfg.corrections.terrain_flattening.dem is None
+    assert cfg.output_quantity == SARRadiometricQuantity.BETA_NOUGHT
 
 
 def test_missing_correction_field(tmp_path):

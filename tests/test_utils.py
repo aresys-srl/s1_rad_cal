@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 from arepytools.io import metadata as mtd
 from arepytools.io.metadata import EPolarization, ESideLooking
+from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
 
 from rad_cal.utils import (
     _compile_dataset_info,
@@ -111,6 +112,7 @@ class TestCreatePfMetadata:
             metadata=fake_metadata,
             channel_raster_file=raster_file,
             swath="IW1",
+            output_quantity=SARRadiometricQuantity.BETA_NOUGHT,
         )
 
         assert isinstance(result, mtd.MetaData)
@@ -131,6 +133,7 @@ class TestCreatePfMetadata:
             metadata=fake_metadata,
             channel_raster_file=tmp_path / "channel.slc",
             swath="IW2",
+            output_quantity=SARRadiometricQuantity.BETA_NOUGHT,
         )
 
         dataset_info = result.get_dataset_info()
@@ -150,6 +153,7 @@ class TestCreatePfMetadata:
             metadata=fake_metadata,
             channel_raster_file=tmp_path / "channel.slc",
             swath="IW1",
+            output_quantity=SARRadiometricQuantity.BETA_NOUGHT,
         )
 
         state_vectors = result.get_state_vectors()
