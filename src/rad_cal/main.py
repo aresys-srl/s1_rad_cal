@@ -27,7 +27,7 @@ from rad_cal.corrections.common import get_aux_files
 from rad_cal.corrections.denoising import apply_denoising_correction
 from rad_cal.corrections.proc_gain import compute_processing_gain_correction, get_aux_pp1_xml_path_from_product
 from rad_cal.corrections.radiometric_conversion import radiometric_quantity_conversion
-from rad_cal.utils import create_pf_metadata
+from rad_cal.utils import create_pf_metadata, resolve_noise_path
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,12 @@ def run(config: Config):
             logging.StreamHandler(sys.stdout),
         ],
     )
-    if not (config.corrections.eap or config.corrections.processing_gain or config.corrections.absolute_calibration):
+    if not (
+        config.corrections.eap
+        or config.corrections.processing_gain
+        or config.corrections.absolute_calibration
+        or config.corrections.denoising.enabled
+    ):
         raise ValueError("No corrections selected, aborting...")
 
     summary = f"""
@@ -86,13 +91,7 @@ def run(config: Config):
         channel_raster_file = prod_folder.get_channel_data(channel=ch_id)
         metadata_file, raster_file_path, cal_file, noise_path = prod.get_files_from_channel_name(channel)
         ext_noise_vector_dir = config.corrections.denoising.external_noise_vector_folder
-        if ext_noise_vector_dir is not None:
-            noise_path = Path(ext_noise_vector_dir).joinpath(noise_path.name)
-            if not noise_path.is_file():
-                raise FileNotFoundError(
-                    f"{noise_path.name} noise file does not exist in external noise folder {ext_noise_vector_dir}"
-                )
-            logger.info(f"Using external noise calibration file: {noise_path.name}")
+        noise_path = resolve_noise_path(original_noise_path=noise_path, external_noise_folder=ext_noise_vector_dir)
 
         # Always start from beta naught, data is converted later if needed
         scaling_factor = read_channel_calibration(xml_path=cal_file)
@@ -157,7 +156,7 @@ def run(config: Config):
                     dem=config.corrections.eap.dem,
                 )
             else:
-                eap_gain_correction = 1
+                eap_gain_correction = 1.0
 
             if config.corrections.processing_gain:
                 proc_gain_correction = compute_processing_gain_correction(
@@ -167,24 +166,14 @@ def run(config: Config):
                     polarization=pol,
                 )
             else:
-                proc_gain_correction = 1
+                proc_gain_correction = 1.0
 
             if config.corrections.absolute_calibration:
                 abs_cal_correction = compute_absolute_calibration_correction(
                     aux_cal_xml_path_new=aux_cal_xml_path_new, aux_cal_xml_path_original=cal_file
                 )
             else:
-                abs_cal_correction = 1
-
-            target_area = radiometric_quantity_conversion(
-                target_area=target_area,
-                channel_metadata=metadata,
-                swath=swath,
-                az_block_size=az_block_size,
-                bc_num=bc_num,
-                output_quantity=config.output_quantity,
-                dem=config.incidence_angles_dem,
-            )
+                abs_cal_correction = 1.0
 
             if config.corrections.denoising.enabled:
                 target_area = apply_denoising_correction(
@@ -199,6 +188,16 @@ def run(config: Config):
 
             radiometric_correction = eap_gain_correction * abs_cal_correction * proc_gain_correction
             target_area_recal = target_area * radiometric_correction
+
+            target_area = radiometric_quantity_conversion(
+                target_area=target_area,
+                channel_metadata=metadata,
+                swath=swath,
+                az_block_size=az_block_size,
+                bc_num=bc_num,
+                output_quantity=config.output_quantity,
+                dem=config.incidence_angles_dem,
+            )
 
             write_raster_with_raster_info(
                 raster_file=channel_raster_file,

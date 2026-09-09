@@ -6,6 +6,7 @@ Utilities for arepytools metadata compilation
 ---------------------------------------------
 """
 
+import logging
 from pathlib import Path
 
 import arepytools.io.metadata as mtd
@@ -13,6 +14,22 @@ import arepytools.timing.precisedatetime as att
 from arepytools.io import create_new_metadata
 from eo_products.sentinel1.utilities import S1ChannelMetadata
 from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
+
+logger = logging.getLogger(__name__)
+
+
+def resolve_noise_path(original_noise_path: str | Path, external_noise_folder: Path | str | None) -> Path:
+    original_noise_path = Path(original_noise_path)
+    if external_noise_folder is not None:
+        external_noise_folder = Path(external_noise_folder)
+        noise_path = external_noise_folder.joinpath(original_noise_path.name)
+        if not noise_path.is_file():
+            raise FileNotFoundError(
+                f"{noise_path.name} noise file does not exist in external noise folder {external_noise_folder}"
+            )
+        logger.info(f"Using external noise calibration file: {noise_path.name}")
+        return noise_path
+    return original_noise_path
 
 
 def _compile_dataset_info(arepytools_dataset_info: mtd.DataSetInfo, metadata: S1ChannelMetadata) -> mtd.DataSetInfo:
