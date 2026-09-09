@@ -60,7 +60,7 @@ def _compute_incidence_angles(
 
 
 def radiometric_quantity_conversion(
-    target_area: npt.NDArray[np.integer],
+    target_area: npt.NDArray,
     channel_metadata: S1ChannelMetadata,
     swath: str,
     az_block_size: npt.NDArray[np.integer],
@@ -115,4 +115,4 @@ def radiometric_quantity_conversion(
         return target_area * np.sqrt(np.sin(incidence_angles))
     elif output_quantity == SARRadiometricQuantity.GAMMA_NOUGHT:
         return target_area * np.sqrt(np.tan(incidence_angles))
-    raise ValueError(f"Unsopported output quantity {output_quantity.name} provided")
+    raise ValueError(f"Unsupported output quantity {output_quantity.name} provided")
