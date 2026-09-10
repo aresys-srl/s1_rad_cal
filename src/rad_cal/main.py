@@ -175,6 +175,16 @@ def run(config: Config):
             else:
                 abs_cal_correction = 1.0
 
+            target_area = radiometric_quantity_conversion(
+                target_area=target_area,
+                channel_metadata=metadata,
+                swath=swath,
+                az_block_size=az_block_size,
+                bc_num=bc_num,
+                output_quantity=config.output_quantity,
+                dem=config.incidence_angles_dem,
+            )
+
             if config.corrections.denoising.enabled:
                 target_area = apply_denoising_correction(
                     target_area=target_area,
@@ -188,16 +198,6 @@ def run(config: Config):
 
             radiometric_correction = eap_gain_correction * abs_cal_correction * proc_gain_correction
             target_area_recal = target_area * radiometric_correction
-
-            target_area = radiometric_quantity_conversion(
-                target_area=target_area,
-                channel_metadata=metadata,
-                swath=swath,
-                az_block_size=az_block_size,
-                bc_num=bc_num,
-                output_quantity=config.output_quantity,
-                dem=config.incidence_angles_dem,
-            )
 
             write_raster_with_raster_info(
                 raster_file=channel_raster_file,

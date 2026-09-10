@@ -6,6 +6,7 @@ Radiometric Conversion
 ----------------------
 """
 
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -16,6 +17,8 @@ from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
 
 from rad_cal.core.angles import compute_terrain_corrected_incidence_angles
 from rad_cal.core.common import load_dem_from_sar_times
+
+logger = logging.getLogger(__name__)
 
 
 def _compute_incidence_angles(
@@ -112,7 +115,9 @@ def radiometric_quantity_conversion(
     )
 
     if output_quantity == SARRadiometricQuantity.SIGMA_NOUGHT:
+        logger.info("Converting data from beta nought to sigma nought")
         return target_area * np.sqrt(np.sin(incidence_angles))
     elif output_quantity == SARRadiometricQuantity.GAMMA_NOUGHT:
+        logger.info("Converting data from beta nought to gamma nought")
         return target_area * np.sqrt(np.tan(incidence_angles))
     raise ValueError(f"Unsupported output quantity {output_quantity.name} provided")
