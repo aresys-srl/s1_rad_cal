@@ -1,0 +1,10 @@
+{
+    "full_processing": {
+        "analysis": "rainforest_analysis",
+        "product": "/data/reference_dataset/sentinel1d/products/SLC_RAD_CAL.SAFE",
+        "aux_cal": "/data/reference_dataset/sentinel1d/auxiliaries/aux_cal/S1D_AUX_CAL_V20251110T000000_G20260603T113236.SAFE",
+        "aux_pp1": "/data/reference_dataset/sentinel1d/auxiliaries/aux_pp1/S1D_AUX_PP1_V20251110T000000_G20260603T073236.SAFE",
+        "rad_cal_config": "/data/integration_tests/rad_cal/configurations/radcal_full_processing_config.toml",
+        "reference_output": "/data/integration_tests/rad_cal/reference_results/full_processing/RAIN_FOREST_full_rad_cal.nc"
+    }
+}

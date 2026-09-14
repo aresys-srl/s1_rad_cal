@@ -12,7 +12,7 @@ variables:
   GIT_DEPTH: 1
 
 .tags_manylinux_2_28:
-  tags: ["manylinux_2_28"]
+  tags: ["eotools_manylinux228"]
 
 .tags_win10:
   tags: ["eo", "win10", "arepytools-win"]
@@ -83,6 +83,24 @@ unittest_win:
       coverage_report:
         coverage_format: cobertura
         path: _build/pytest-coverage-*.xml
+
+# === test - integration =====================================================
+# ============================================================================
+integration_test_linux:
+  stage: test
+  script:
+    - python${PYTHON} -m venv ./ci_test
+    - source ./ci_test/bin/activate
+    - python -m pip install .
+    - python -m pip install sct
+    - python -m pip install sct-radiometric-analysis
+    - python -m pip install sct_aresys_reader
+    - python scripts/integration_test_full.py 
+  parallel:
+    matrix:
+      - PYTHON: ["3.11", "3.12", "3.13", "3.14"]
+  extends: .tags_manylinux_2_28
+  needs: []
 
 # === build ==================================================================
 # ============================================================================
