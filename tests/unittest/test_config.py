@@ -16,13 +16,7 @@ def test_from_toml(tmp_path):
 
     config_file.write_text(
         """
-[input]
-l1_product = "product.SAFE"
-aux_pp1 = "aux_pp1.xml"
-aux_cal = "aux_cal.xml"
-
 [output]
-directory = "output"
 radiometric_quantity = "beta"
 incidence_angles_dem = "path/to/dem"
 
@@ -42,12 +36,6 @@ enabled = true
     cfg = from_toml(config_file)
 
     assert isinstance(cfg, Config)
-
-    assert cfg.l1_product == Path("product.SAFE")
-    assert cfg.aux_pp1 == Path("aux_pp1.xml")
-    assert cfg.aux_cal == Path("aux_cal.xml")
-    assert cfg.output == Path("output")
-
     assert cfg.corrections.eap.enabled is True
     assert cfg.corrections.eap.dem == Path("path/to/dem")
     assert cfg.corrections.processing_gain is True

@@ -35,14 +35,9 @@ class Corrections:
 
 @dataclass
 class Config:
-    l1_product: Path
-    aux_pp1: Path
-    aux_cal: Path
-    output: Path
-    output_quantity: SARRadiometricQuantity
-    incidence_angles_dem: Path | None
-
-    corrections: Corrections
+    corrections: Corrections = field(default_factory=Corrections)
+    output_quantity: SARRadiometricQuantity = SARRadiometricQuantity.BETA_NOUGHT
+    incidence_angles_dem: Path | None = None
 
 
 def from_toml(path: str | Path) -> Config:
@@ -72,10 +67,6 @@ def from_toml(path: str | Path) -> Config:
     radiometric_quantity = output_cfg.get("radiometric_quantity", "beta")
 
     return Config(
-        l1_product=Path(cfg["input"]["l1_product"]),
-        aux_pp1=Path(cfg["input"]["aux_pp1"]),
-        aux_cal=Path(cfg["input"]["aux_cal"]),
-        output=Path(cfg["output"]["directory"]),
         output_quantity=SARRadiometricQuantity[f"{radiometric_quantity.upper()}_NOUGHT"],
         incidence_angles_dem=incidence_angles_dem,
         corrections=Corrections(
@@ -94,3 +85,8 @@ def from_toml(path: str | Path) -> Config:
             ),
         ),
     )
+
+
+if __name__ == "__main__":
+    config = Config()
+    print(config)

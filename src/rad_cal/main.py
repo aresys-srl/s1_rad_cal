@@ -32,11 +32,17 @@ from rad_cal.utils import create_pf_metadata, resolve_noise_path
 logger = logging.getLogger(__name__)
 
 
-def run(config: Config):
-    l1_product_path = Path(config.l1_product)
-    aux_pp1_path_new = Path(config.aux_pp1)
-    aux_cal_path_new = Path(config.aux_cal)
-    output_path = Path(config.output)
+def run(
+    l1_product_path: str | Path,
+    aux_pp1_path: str | Path,
+    aux_cal_path: str | Path,
+    output_path: str | Path,
+    config: Config,
+):
+    l1_product_path = Path(l1_product_path)
+    aux_pp1_path_new = Path(aux_pp1_path)
+    aux_cal_path_new = Path(aux_cal_path)
+    output_path = Path(output_path)
 
     logging.basicConfig(
         level=logging.INFO,
@@ -206,4 +212,4 @@ def run(config: Config):
                 start_point=(az_block_size[bc_num] * bc_num, 0),
             )
         write_metadata(pf_channel_mtd, metadata_file=prod_folder.get_channel_metadata(channel=ch_id))
-    logger.info(f"Results saved to {config.output}")
+    logger.info(f"Results saved to {output_path}")
