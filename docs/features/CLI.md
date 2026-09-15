@@ -19,36 +19,38 @@ The main command line tool that can be accessed using the ``rad-cal`` command in
 Rad-cal tool command line can be invoked in the terminal session as:
 
 ``` bash title="CLI Entry Point"
-rad-cal [--config/-c] [--help]
+rad-cal [--input/-in] [--output/-out] [--config/-c] [--help]
 ```
 
-This is the entry point for the console script. The configuration needed to perform the analysis must be provided
-using the ``--config/-c`` argument.
+This is the entry point for the console script. Input file .json and output folder must be provided as paths, configuration is optional:
+if not provided, the default configuration will be used.
+
+## Input file .json
+In order to run ``rad-cal`` user must provide an input file in .json format; the structure of such file is shown here:
+
+``` json title="Input file"
+{
+    "l1_product": "path/to/Sentinel-1/product",
+    "aux_pp1": "path/to/aux/pp1/file/to/be/applied",
+    "aux_cal": "path/to/aux/cal/file/to/be/applied"
+}
+```
 
 ## Configuration file
 
-In order to launch the rad-cal tool, user must provide a configuration file.
 The configuration file lets the user select which correction to apply for the radiometric calibration of the input product.
 Refer to the [radiometric corrections](corrections.md) for further information.
 
 The .toml configuration file is organized in sections:
 
--**input**: here the path to the needed input files must be provided
-
--**output**: here the path to the output folder must be provided, moreover user can decide the output radiometric quantity and can provide a DEM for radiometric quantity conversion.
+-**output**: here the user can decide the output radiometric quantity and can provide a DEM for radiometric quantity conversion.
 
 -**corrections**: here the user can select which corrections to apply
 
 Here an example of the needed .toml configuration file is provided:
 
 ``` toml title="General Configuration"
-[input]
-l1_product = "path/to/sentinel1/L1/product.SAFE"
-aux_pp1 = "path/to/AUX_PP1.SAFE"
-aux_cal = "path/to/AUX_CAL.SAFE"
-
 [output]
-directory = "path/where/output/is/stored"
 radiometric_quantity = "beta" # (1)!
 incidence_angles_dem = "optional/path/to/dem/tiles/folder" # (2)!
 
