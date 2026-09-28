@@ -8,6 +8,6 @@ tags:
 
 # Changelog
 
-## v1.0.0.dev0
+## v0.1.0
 
 First development version.
