@@ -66,8 +66,8 @@ def radiometric_quantity_conversion(
     target_area: npt.NDArray,
     channel_metadata: S1ChannelMetadata,
     swath: str,
-    az_block_size: npt.NDArray[np.integer],
-    bc_num: int,
+    azimuth_times: npt.NDArray,
+    range_times: npt.NDArray[np.floating],
     output_quantity: SARRadiometricQuantity,
     dem: Path | None = None,
 ) -> npt.NDArray[np.floating]:
@@ -88,10 +88,10 @@ def radiometric_quantity_conversion(
         S1ChannelMetadata object
     swath : str
         swath name
-    az_block_size : npt.NDArray[np.integer]
-        Azimuth lines of each azimuth block
-    bc_num : int
-        Block center index
+    azimuth_axis : npt.NDArray
+        Azimuth time axis of the block
+    range_axis : npt.NDArray[np.floating]
+        Slant range axis of the block
     output_quantity : SARRadiometricQuantity
         output radiometric quantity
     dem : Path | None, optional
@@ -104,11 +104,6 @@ def radiometric_quantity_conversion(
     """
     if output_quantity == SARRadiometricQuantity.BETA_NOUGHT:
         return target_area
-
-    azimuth_times = channel_metadata.raster_info.lines.axis[
-        int(np.sum(az_block_size[:bc_num])) : int(np.sum(az_block_size[:bc_num]) + az_block_size[bc_num])
-    ]
-    range_times = channel_metadata.raster_info.samples.axis
 
     incidence_angles = _compute_incidence_angles(
         channel_metadata=channel_metadata, swath=swath, range_times=range_times, azimuth_times=azimuth_times, dem=dem

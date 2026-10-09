@@ -10,7 +10,6 @@ import logging
 import sys
 from pathlib import Path
 
-import numpy as np
 from arepytools.io import create_product_folder, write_metadata, write_raster_with_raster_info
 from eo_products.sentinel1.reader import (
     open_product,
@@ -19,6 +18,7 @@ from eo_products.sentinel1.reader import (
     read_channel_metadata,
     read_channel_noise_vectors,
 )
+from eo_products.sentinel1.utilities import S1L1ProductType
 
 from rad_cal.config import Config
 from rad_cal.corrections.abs_cal import compute_absolute_calibration_correction
@@ -27,7 +27,7 @@ from rad_cal.corrections.common import get_aux_files
 from rad_cal.corrections.denoising import apply_denoising_correction
 from rad_cal.corrections.proc_gain import compute_processing_gain_correction, get_aux_pp1_xml_path_from_product
 from rad_cal.corrections.radiometric_conversion import radiometric_quantity_conversion
-from rad_cal.utils import create_pf_metadata, resolve_noise_path
+from rad_cal.utils import build_grd_blocks, build_slc_blocks, create_pf_metadata, resolve_noise_path
 
 logger = logging.getLogger(__name__)
 
@@ -105,61 +105,40 @@ def run(
         list_azimuth_noise_vectors, list_range_noise_vectors = read_channel_noise_vectors(noise_path)
         swath = metadata.general_info.swath
         pol = metadata.general_info.polarization.name
-
-        range_axis = metadata.raster_info.samples.axis
-        azimuth_axis = metadata.raster_info.lines.axis
-
-        mid_range_pixel = int(range_axis.size // 2)
-        if metadata.burst_info.num > 1:
-            az_block_size = [metadata.burst_info.lines_per_burst] * metadata.burst_info.num
-            blocks_num = metadata.burst_info.num  # number of bursts
-            blocks_centers_px = [
-                (int(a + b // 2), mid_range_pixel)
-                for a, b in zip(
-                    np.concatenate([[0], np.cumsum(az_block_size)[:-1]], dtype=int),
-                    az_block_size,
-                    strict=True,
-                )
-            ]
-        else:
-            az_block_size = 2000
-            blocks_num = int(np.floor(azimuth_axis.size / az_block_size))
-            blocks_centers_px = np.arange(az_block_size // 2, az_block_size * blocks_num, az_block_size).tolist()
-            blocks_centers_px = [(px, mid_range_pixel) for px in blocks_centers_px]
-            az_block_size = [az_block_size] * blocks_num
+        is_grd = metadata.general_info.product_type == S1L1ProductType.GRD
 
         pf_channel_mtd = create_pf_metadata(
             metadata=metadata,
             channel_raster_file=channel_raster_file,
             swath=swath,
             output_quantity=config.output_quantity,
+            is_grd=is_grd,
         )
 
-        for bc_num, center in enumerate(blocks_centers_px):
-            logger.info(f"Processing block {bc_num + 1} of {blocks_num}")
-            cropping_size = (
-                range_axis.size,  # range
-                az_block_size[bc_num],  # azimuth
-            )
-            target_block = [
-                center[0] - np.floor(cropping_size[1] / 2).astype(int),
-                center[1] - np.floor(cropping_size[0] / 2).astype(int),
-                cropping_size[1],
-                cropping_size[0],
-            ]
+        blocks = (
+            build_grd_blocks(metadata=metadata, metadata_file=metadata_file)
+            if is_grd
+            else build_slc_blocks(metadata=metadata, swath=swath)
+        )
+
+        for block in blocks:
+            logger.info(f"Processing block {block.index + 1} of {len(blocks)}")
             target_area = read_channel_data(
-                raster_file=raster_file_path, block_to_read=target_block, scaling_conversion=scaling_factor
+                raster_file=raster_file_path,
+                block_to_read=block.target_block,
+                scaling_conversion=scaling_factor,
             )
 
             if config.corrections.eap.enabled:
                 eap_gain_correction = compute_eap_gain_correction(
                     channel_metadata=metadata,
-                    swath=swath,
+                    swath=block.swath,
                     polarization=pol,
                     aux_cal_xml_path=aux_cal_xml_path_new,
-                    az_block_size=az_block_size,
-                    bc_num=bc_num,
+                    azimuth_times=block.azimuth_axis,
+                    range_times=block.range_axis,
                     dem=config.corrections.eap.dem,
+                    is_grd=is_grd,
                 )
             else:
                 eap_gain_correction = 1.0
@@ -168,7 +147,7 @@ def run(
                 proc_gain_correction = compute_processing_gain_correction(
                     aux_pp1_xml_path_new=aux_pp1_xml_path_new,
                     aux_pp1_xml_path_original=aux_pp1_xml_path_original,
-                    swath=swath,
+                    swath=block.swath,
                     polarization=pol,
                 )
             else:
@@ -181,35 +160,36 @@ def run(
             else:
                 abs_cal_correction = 1.0
 
-            target_area = radiometric_quantity_conversion(
-                target_area=target_area,
-                channel_metadata=metadata,
-                swath=swath,
-                az_block_size=az_block_size,
-                bc_num=bc_num,
-                output_quantity=config.output_quantity,
-                dem=config.incidence_angles_dem,
-            )
+            if not is_grd:
+                target_area = radiometric_quantity_conversion(
+                    target_area=target_area,
+                    channel_metadata=metadata,
+                    swath=swath,
+                    azimuth_times=block.azimuth_axis,
+                    range_times=block.range_axis,
+                    output_quantity=config.output_quantity,
+                    dem=config.incidence_angles_dem,
+                )
 
             if config.corrections.denoising.enabled:
                 target_area = apply_denoising_correction(
                     target_area=target_area,
                     swath=swath,
-                    azimuth_indexes=(target_block[0], target_block[0] + target_block[2]),
+                    azimuth_indexes=(block.first_line, block.first_line + block.n_lines),
+                    range_indexes=(block.first_sample, block.first_sample + block.n_samples),
                     azimuth_noise_vectors=list_azimuth_noise_vectors,
                     range_noise_vectors=list_range_noise_vectors,
-                    is_grd=False,
                     scaling_conversion=scaling_factor,
+                    is_grd=is_grd,
                 )
 
             radiometric_correction = eap_gain_correction * abs_cal_correction * proc_gain_correction
             target_area_recal = target_area * radiometric_correction
-
             write_raster_with_raster_info(
                 raster_file=channel_raster_file,
                 data=target_area_recal,
                 raster_info=pf_channel_mtd.get_raster_info(),
-                start_point=(az_block_size[bc_num] * bc_num, 0),
+                start_point=(block.first_line, block.first_sample),
             )
         write_metadata(pf_channel_mtd, metadata_file=prod_folder.get_channel_metadata(channel=ch_id))
     logger.info(f"Results saved to {output_path}")

@@ -25,39 +25,32 @@ def compute_eap_gain_correction(
     swath: str,
     polarization: str,
     aux_cal_xml_path: Path | str,
-    az_block_size: npt.NDArray[np.integer],
-    bc_num: int,
+    azimuth_times: npt.NDArray[np.floating],
+    range_times: npt.NDArray[np.floating],
     dem: Path | None = None,
-) -> npt.NDArray[np.floating]:
-    """Compute elevation antenna pattern gain correction [dB] for each pixel of the current azimuth block
+    is_grd: bool = False,
+) -> npt.NDArray[np.complexfloating]:
+    """Compute elevation antenna pattern gain correction for each pixel of the block
 
     Parameters
     ----------
     channel_metadata : S1ChannelMetadata
-        S1ChannelMetadata object
     swath : str
-        swath name
+        (sub-)swath name of the block, e.g. IW1
     polarization : str
-        polarization
     aux_cal_xml_path : Path | str
-       Path to the AUX_CAL xml file
-    az_block_size : npt.NDArray[np.integer]
-        Azimuth lines of each azimuth block
-    bc_num : int
-        Block center index
+        path to AUX_CAL xml file
+    azimuth_times : npt.NDArray
+        Azimuth time axis of the block
+    range_times : npt.NDArray[np.floating]
+        Slant range time axis of the block
     dem : Path | None, optional
         path to DEM tiles folder, by default None
-
-    Returns
-    -------
-    npt.NDArray[np.floating]
-        elevation antenna pattern gain correction [dB]
+    is_grd : bool, optional
+        flag to mark whether product type is GRD, by default False
     """
     aux_cal_xml_path = Path(aux_cal_xml_path)
-    azimuth_times = channel_metadata.raster_info.lines.axis[
-        int(np.sum(az_block_size[:bc_num])) : int(np.sum(az_block_size[:bc_num]) + az_block_size[bc_num])
-    ]
-    range_times = channel_metadata.raster_info.samples.axis
+    az_time = azimuth_times[len(azimuth_times) // 2]  # block center
 
     if dem is not None:
         burst_area_dem = load_dem_from_sar_times(
@@ -78,12 +71,10 @@ def compute_eap_gain_correction(
             radians=False,
         )
     else:
-        time_idx = np.argmin(
-            abs(channel_metadata.antenna_pattern[swath].time_axis - azimuth_times[len(azimuth_times) // 2])
-        )
+        time_idx = np.argmin(abs(channel_metadata.antenna_pattern[swath].time_axis - az_time))
         look_angles = compute_look_angles(
             trajectory=channel_metadata.orbit,
-            azimuth_time=azimuth_times[len(azimuth_times) // 2],
+            azimuth_time=az_time,
             range_times=range_times,
             look_direction=channel_metadata.dataset_info.side_looking,
             geodetic_altitude=channel_metadata.antenna_pattern[swath].terrain_height[time_idx],
@@ -91,7 +82,6 @@ def compute_eap_gain_correction(
         )
         look_angles = np.broadcast_to(look_angles, (len(azimuth_times), len(range_times)))
 
-    az_time = azimuth_times[az_block_size[bc_num] // 2]
     block_look_angles = compute_look_angles(
         trajectory=channel_metadata.orbit,
         azimuth_time=az_time,
@@ -122,7 +112,9 @@ def compute_eap_gain_correction(
     eap_correction_abs = np.sqrt(abs(eap_correction_raw))
     eap_correction_phase = np.angle(eap_correction_raw)
 
-    return eap_correction_abs * np.exp(1j * eap_correction_phase)
+    complex_correction = eap_correction_abs * np.exp(1j * eap_correction_phase)
+
+    return np.abs(complex_correction) if is_grd else complex_correction
 
 
 def compute_antenna_pattern_gain_from_metadata(
