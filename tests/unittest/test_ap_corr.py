@@ -163,8 +163,8 @@ def test_compute_eap_gain_correction(monkeypatch):
         swath="IW1",
         polarization="VV",
         aux_cal_xml_path="dummy.xml",
-        az_block_size=np.array([4]),
-        bc_num=0,
+        azimuth_times=np.linspace(0, 1, 4),
+        range_times=np.linspace(0.0004, 0.0006, 4),
         dem=Path("path/to/dem"),
     )
 

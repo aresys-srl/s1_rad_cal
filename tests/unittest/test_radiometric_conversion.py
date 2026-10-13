@@ -224,8 +224,8 @@ class TestRadiometricQuantityConversion:
             target_area=target_area,
             channel_metadata=metadata,
             swath="IW",
-            az_block_size=np.array([2, 2, 1]),
-            bc_num=1,
+            azimuth_times=np.linspace(0, 1, target_area.shape[0]),
+            range_times=np.linspace(0, 1, target_area.shape[1]),
             output_quantity=SARRadiometricQuantity.BETA_NOUGHT,
         )
 
@@ -272,8 +272,8 @@ class TestRadiometricQuantityConversion:
             target_area=target_area,
             channel_metadata=metadata,
             swath="IW",
-            az_block_size=np.array([2, 2, 1]),
-            bc_num=1,
+            azimuth_times=np.array([2.0, 3.0]),
+            range_times=np.array([10.0, 20.0, 30.0]),
             output_quantity=SARRadiometricQuantity.SIGMA_NOUGHT,
         )
 
@@ -315,8 +315,8 @@ class TestRadiometricQuantityConversion:
             target_area=target_area,
             channel_metadata=metadata,
             swath="IW",
-            az_block_size=np.array([2, 2, 1]),
-            bc_num=1,
+            azimuth_times=np.linspace(0, 1, target_area.shape[0]),
+            range_times=np.linspace(0, 1, target_area.shape[1]),
             output_quantity=SARRadiometricQuantity.GAMMA_NOUGHT,
         )
 
@@ -347,8 +347,8 @@ class TestRadiometricQuantityConversion:
             target_area=target_area,
             channel_metadata=metadata,
             swath="IW",
-            az_block_size=np.array([2, 2, 1]),
-            bc_num=1,
+            azimuth_times=np.linspace(0, 1, target_area.shape[0]),
+            range_times=np.linspace(0, 1, target_area.shape[1]),
             output_quantity=SARRadiometricQuantity.SIGMA_NOUGHT,
             dem=dem,
         )
@@ -373,7 +373,7 @@ class TestRadiometricQuantityConversion:
                 target_area=target_area,
                 channel_metadata=metadata,
                 swath="IW",
-                az_block_size=np.array([2, 2, 1]),
-                bc_num=1,
+                azimuth_times=np.linspace(0, 1, target_area.shape[0]),
+                range_times=np.linspace(0, 1, target_area.shape[1]),
                 output_quantity=FakeQuantity(),
             )

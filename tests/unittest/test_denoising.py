@@ -8,7 +8,6 @@ import numpy as np
 from rad_cal.corrections.denoising import apply_denoising_correction
 
 SWATH = "IW1"
-AZIMUTH_INDEXES = (0, 10)
 
 
 def make_noise_vectors(shape, value):
@@ -21,10 +20,9 @@ def run(
     noise_value,
     scaling=1.0,
     swath=SWATH,
-    azimuth_indexes=AZIMUTH_INDEXES,
     azimuth_noise_vectors=None,
     range_noise_vectors=None,
-    is_grd=True,
+    is_grd=False,
 ):
     """
     Patch get_noise_vectors, call apply_denoising_correction, return result.
@@ -37,7 +35,8 @@ def run(
     return apply_denoising_correction(
         target_area=target,
         swath=swath,
-        azimuth_indexes=azimuth_indexes,
+        azimuth_indexes=(0, target.shape[0]),
+        range_indexes=(0, target.shape[1]),
         azimuth_noise_vectors=azimuth_noise_vectors,
         range_noise_vectors=range_noise_vectors or [],
         scaling_conversion=scaling,
@@ -161,3 +160,25 @@ class TestClippingBehaviour:
         target = np.array([[1 + 0j]], dtype=np.complex64)
         result = run(monkeypatch, target, noise_value=1.0)
         assert result[0, 0] == 0.0
+
+
+class TestGRDDenoising:
+    def test_zero_noise_leaves_amplitude_unchanged(self, monkeypatch):
+        """With zero noise the function is an identity."""
+        target = np.array([[3]], dtype=np.float32)
+        result = run(monkeypatch, target, noise_value=0.0, is_grd=True)
+        np.testing.assert_allclose(result, target, atol=1e-6)
+
+    def test_output_magnitude_reduced_by_noise(self, monkeypatch):
+        """Noise must reduce, never increase, the magnitude."""
+        target = np.array([[5]], dtype=np.float32)  # power = 25
+        result = run(monkeypatch, target, noise_value=9.0, is_grd=True)  # corrected power = 16
+        np.testing.assert_allclose(np.abs(result[0, 0]), 4.0, atol=1e-6)
+
+    def test_power_exceeds_noise_exact_formula(self, monkeypatch):
+        """Verify exact analytic value: |out| = sqrt(power - noise)."""
+        amplitude, noise = 5.0, 9.0
+        target = np.array([[amplitude]], dtype=np.float32)
+        result = run(monkeypatch, target, noise_value=noise, is_grd=True)
+        expected = np.sqrt(amplitude**2 - noise)  # sqrt(16) = 4
+        np.testing.assert_allclose(np.abs(result[0, 0]), expected, atol=1e-6)

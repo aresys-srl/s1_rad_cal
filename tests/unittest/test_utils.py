@@ -113,6 +113,7 @@ class TestCreatePfMetadata:
             channel_raster_file=raster_file,
             swath="IW1",
             output_quantity=SARRadiometricQuantity.BETA_NOUGHT,
+            is_grd=False,
         )
 
         assert isinstance(result, mtd.MetaData)
@@ -134,6 +135,7 @@ class TestCreatePfMetadata:
             channel_raster_file=tmp_path / "channel.slc",
             swath="IW2",
             output_quantity=SARRadiometricQuantity.BETA_NOUGHT,
+            is_grd=False,
         )
 
         dataset_info = result.get_dataset_info()
@@ -154,6 +156,7 @@ class TestCreatePfMetadata:
             channel_raster_file=tmp_path / "channel.slc",
             swath="IW1",
             output_quantity=SARRadiometricQuantity.BETA_NOUGHT,
+            is_grd=False,
         )
 
         state_vectors = result.get_state_vectors()
