@@ -75,6 +75,8 @@ $$
 \text{EAP correction} = \sqrt{\left|\frac{\text{original EAP}}{\text{updated EAP}}\right|} e^{\mathrm{i} \phase{\frac{\text{original EAP}}{\text{updated EAP}}}}
 $$
 
+For GRD products, only the module of the $\text{EAP correction}$ is considered.
+
 ## Examples
 
 <figure>
