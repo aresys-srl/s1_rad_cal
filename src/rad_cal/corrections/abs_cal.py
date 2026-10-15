@@ -28,12 +28,12 @@ def compute_absolute_calibration_correction(aux_cal_xml_path_new: Path, aux_cal_
     float
         absolute calibration correction [dB]
     """
-    abs_cal_original = get_abs_cal_constant_from_cal_file(aux_cal_xml_path_original)
-    abs_cal_new = get_abs_cal_constant_from_cal_file(aux_cal_xml_path_new)
+    abs_cal_original = _get_abs_cal_constant_from_cal_file(aux_cal_xml_path_original)
+    abs_cal_new = _get_abs_cal_constant_from_cal_file(aux_cal_xml_path_new)
     return abs_cal_original / abs_cal_new
 
 
-def get_abs_cal_constant_from_cal_file(aux_cal_xml_path: str | Path) -> dict:
+def _get_abs_cal_constant_from_cal_file(aux_cal_xml_path: str | Path) -> dict:
     """Retrieve absolute calibration constant from AUX_CAL file"""
     root = etree.parse(Path(aux_cal_xml_path)).getroot()
     return float(root.findall(".//absoluteCalibrationConstant")[0].text)

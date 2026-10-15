@@ -38,7 +38,8 @@ def run(
     aux_cal_path: str | Path,
     output_path: str | Path,
     config: Config,
-):
+) -> None:
+    """Perform radiometric calibration"""
     l1_product_path = Path(l1_product_path)
     aux_pp1_path_new = Path(aux_pp1_path)
     aux_cal_path_new = Path(aux_cal_path)

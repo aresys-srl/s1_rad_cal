@@ -16,8 +16,8 @@ from perseo_core.geometry.navigation.trajectory import Trajectory
 
 SensorLookDirection = Literal["RIGHT", "LEFT"]
 
-RANGE_MARGIN_SEC = 0.0001
-AZIMUTH_MARGIN_SEC = 0.5
+_RANGE_MARGIN_SEC = 0.0001
+_AZIMUTH_MARGIN_SEC = 0.5
 
 
 def _compute_footprint_from_times(
@@ -54,22 +54,22 @@ def _compute_footprint_from_times(
         sensor_positions=trajectory.position(
             np.array(
                 [
-                    azimuth_times[0] - AZIMUTH_MARGIN_SEC,
-                    azimuth_times[-1] + AZIMUTH_MARGIN_SEC,
+                    azimuth_times[0] - _AZIMUTH_MARGIN_SEC,
+                    azimuth_times[-1] + _AZIMUTH_MARGIN_SEC,
                 ]
             )
         ),
         sensor_velocities=trajectory.velocity(
             np.array(
                 [
-                    azimuth_times[0] - AZIMUTH_MARGIN_SEC,
-                    azimuth_times[-1] + AZIMUTH_MARGIN_SEC,
+                    azimuth_times[0] - _AZIMUTH_MARGIN_SEC,
+                    azimuth_times[-1] + _AZIMUTH_MARGIN_SEC,
                 ]
             )
         ),
         range_times=[
-            range_times[0] - RANGE_MARGIN_SEC,
-            range_times[-1] + RANGE_MARGIN_SEC,
+            range_times[0] - _RANGE_MARGIN_SEC,
+            range_times[-1] + _RANGE_MARGIN_SEC,
         ],
         altitude=0.0,
         doppler_frequencies=doppler_frequency,
@@ -133,7 +133,7 @@ def load_dem_from_sar_times(
     Parameters
     ----------
     dem : Path | str
-      path to DEM tiles folder
+        path to DEM tiles folder
     trajectory : Trajectory
         sensor trajectory
     range_times : npt.NDArray[np.floating]
@@ -146,7 +146,6 @@ def load_dem_from_sar_times(
         carrier signal wavelength, by default 1
     doppler_frequency : float, optional
         doppler frequency [Hz], by default 0
-
 
     Returns
     -------

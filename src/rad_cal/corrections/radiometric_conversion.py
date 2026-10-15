@@ -88,9 +88,9 @@ def radiometric_quantity_conversion(
         S1ChannelMetadata object
     swath : str
         swath name
-    azimuth_axis : npt.NDArray
+    azimuth_times : npt.NDArray
         Azimuth time axis of the block
-    range_axis : npt.NDArray[np.floating]
+    range_times : npt.NDArray[np.floating]
         Slant range axis of the block
     output_quantity : SARRadiometricQuantity
         output radiometric quantity

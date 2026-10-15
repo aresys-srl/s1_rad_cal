@@ -211,8 +211,8 @@ class TestComputeFootprintFromTimes:
         # azimuth margin applied on both ends before calling trajectory.position/velocity
         expected_az = np.array(
             [
-                azimuth_times[0] - angles_common.AZIMUTH_MARGIN_SEC,
-                azimuth_times[-1] + angles_common.AZIMUTH_MARGIN_SEC,
+                azimuth_times[0] - angles_common._AZIMUTH_MARGIN_SEC,
+                azimuth_times[-1] + angles_common._AZIMUTH_MARGIN_SEC,
             ]
         )
         np.testing.assert_allclose(position_calls[0], expected_az)
@@ -220,8 +220,8 @@ class TestComputeFootprintFromTimes:
 
         # range margin applied before calling direct_geocoding_monostatic
         expected_rg = [
-            range_times[0] - angles_common.RANGE_MARGIN_SEC,
-            range_times[-1] + angles_common.RANGE_MARGIN_SEC,
+            range_times[0] - angles_common._RANGE_MARGIN_SEC,
+            range_times[-1] + angles_common._RANGE_MARGIN_SEC,
         ]
         np.testing.assert_allclose(captured_geocoding_kwargs["range_times"], expected_rg)
         assert captured_geocoding_kwargs["look_direction"] == "RIGHT"

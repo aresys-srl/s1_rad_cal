@@ -217,7 +217,7 @@ def create_pf_metadata(
     return pf_channel_mtd
 
 
-def parse_swath_bounds(xml_path: str) -> dict[str, list[dict]]:
+def _parse_swath_bounds(xml_path: str) -> dict[str, list[dict]]:
     """Parse metadata of GRD product and return a dictionary containing the swath bounds list.
 
     Parameters
@@ -298,7 +298,7 @@ def build_grd_blocks(
     ground_axis = metadata.raster_info.samples.axis
     azimuth_axis = metadata.raster_info.lines.axis
     blocks: list[DataBlock] = []
-    for sw, bounds in parse_swath_bounds(xml_path=metadata_file).items():
+    for sw, bounds in _parse_swath_bounds(xml_path=metadata_file).items():
         for bound in bounds:
             first_line, last_line = bound["firstAzimuth"], bound["lastAzimuth"]
             first_sample, last_sample = bound["firstRange"], bound["lastRange"]

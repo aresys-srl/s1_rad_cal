@@ -23,7 +23,7 @@ SAFE_NS = "http://www.esa.int/safe/sentinel-1.0"
     ],
 )
 def test_get_processing_gain_from_aux_pp1_string(swath, pol, expected):
-    assert pg.get_processing_gain_from_aux_pp1(TEST_DATA, swath, pol) == pytest.approx(expected)
+    assert pg._get_processing_gain_from_aux_pp1(TEST_DATA, swath, pol) == pytest.approx(expected)
 
 
 @pytest.mark.parametrize(
@@ -36,7 +36,7 @@ def test_get_processing_gain_from_aux_pp1_string(swath, pol, expected):
     ],
 )
 def test_get_processing_gain_from_aux_pp1_string_path(swath, pol, expected):
-    assert pg.get_processing_gain_from_aux_pp1(Path(TEST_DATA), swath, pol) == pytest.approx(expected)
+    assert pg._get_processing_gain_from_aux_pp1(Path(TEST_DATA), swath, pol) == pytest.approx(expected)
 
 
 def test_compute_processing_gain_correction(monkeypatch):
@@ -47,7 +47,7 @@ def test_compute_processing_gain_correction(monkeypatch):
 
     monkeypatch.setattr(
         pg,
-        "get_processing_gain_from_aux_pp1",
+        "_get_processing_gain_from_aux_pp1",
         mock_get_processing_gain_from_aux_pp1,
     )
 

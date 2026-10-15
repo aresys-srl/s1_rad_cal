@@ -32,7 +32,7 @@ def apply_denoising_correction(
     azimuth_indexes : tuple[int, int]
         indexes of the first and last azimuth line of the current block
     range_indexes : tuple[int, int]
-            indexes of the first and last range samples of the current block
+        indexes of the first and last range samples of the current block
     azimuth_noise_vectors : list[S1AzimuthNoiseVector] | None
         list of S1 azimuth noise vectors
     range_noise_vectors : list[S1RangeNoiseVector]

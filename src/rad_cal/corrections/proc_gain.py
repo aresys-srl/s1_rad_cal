@@ -41,17 +41,17 @@ def compute_processing_gain_correction(
         processing gain correction [dB]
     """
 
-    proc_gain_new = get_processing_gain_from_aux_pp1(
+    proc_gain_new = _get_processing_gain_from_aux_pp1(
         xml_path=aux_pp1_xml_path_new, swath=swath, polarization=polarization
     )
-    proc_gain_original = get_processing_gain_from_aux_pp1(
+    proc_gain_original = _get_processing_gain_from_aux_pp1(
         xml_path=aux_pp1_xml_path_original, swath=swath, polarization=polarization
     )
 
     return proc_gain_new / proc_gain_original
 
 
-def get_processing_gain_from_aux_pp1(xml_path: str | Path, swath: str, polarization: str) -> float:
+def _get_processing_gain_from_aux_pp1(xml_path: str | Path, swath: str, polarization: str) -> float:
     """Retrieve processing gain for AUX_PP1 file ini dB
 
     Parameters

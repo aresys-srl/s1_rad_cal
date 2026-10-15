@@ -91,7 +91,7 @@ def compute_eap_gain_correction(
         look_direction=channel_metadata.dataset_info.side_looking,
         radians=False,
     )
-    original_eap = compute_antenna_pattern_gain_from_metadata(
+    original_eap = _compute_antenna_pattern_gain_from_metadata(
         channel_metadata=channel_metadata,
         swath=swath,
         az_time=az_time,
@@ -105,7 +105,7 @@ def compute_eap_gain_correction(
         mission_id=channel_metadata.general_info.mission_id,
         az_time=az_time,
     )
-    new_eap, new_look_angles = get_elevation_antenna_pattern_from_aux_cal(
+    new_eap, new_look_angles = _get_elevation_antenna_pattern_from_aux_cal(
         xml_path=aux_cal_xml_path, swath=swath, polarization=polarization, roll=roll
     )
     new_eap = np.interp(look_angles, new_look_angles, new_eap)
@@ -119,7 +119,7 @@ def compute_eap_gain_correction(
     return np.abs(complex_correction) if is_grd else complex_correction
 
 
-def compute_antenna_pattern_gain_from_metadata(
+def _compute_antenna_pattern_gain_from_metadata(
     channel_metadata: S1ChannelMetadata,
     swath: str,
     az_time: PreciseDateTime,
@@ -155,7 +155,7 @@ def compute_antenna_pattern_gain_from_metadata(
     return antenna_pattern_reinterp
 
 
-def get_elevation_antenna_pattern_from_aux_cal(
+def _get_elevation_antenna_pattern_from_aux_cal(
     xml_path: str | Path,
     swath: str,
     polarization: str,

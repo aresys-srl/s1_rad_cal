@@ -10,8 +10,8 @@ import numpy as np
 
 import rad_cal.corrections.ap_gain as eap_gain
 from rad_cal.corrections.ap_gain import (
-    compute_antenna_pattern_gain_from_metadata,
-    get_elevation_antenna_pattern_from_aux_cal,
+    _compute_antenna_pattern_gain_from_metadata,
+    _get_elevation_antenna_pattern_from_aux_cal,
 )
 
 
@@ -36,7 +36,7 @@ def test_get_elevation_antenna_pattern_from_aux_cal(tmp_path):
     xml = tmp_path / "aux_cal.xml"
     create_aux_cal(xml)
 
-    eap, angles = get_elevation_antenna_pattern_from_aux_cal(
+    eap, angles = _get_elevation_antenna_pattern_from_aux_cal(
         xml,
         swath="IW1",
         polarization="VV",
@@ -76,7 +76,7 @@ def test_compute_antenna_pattern_gain_from_metadata():
         }
     )
 
-    result = compute_antenna_pattern_gain_from_metadata(
+    result = _compute_antenna_pattern_gain_from_metadata(
         channel_metadata=metadata,
         swath="IW1",
         az_time=15,
@@ -116,7 +116,7 @@ def test_compute_eap_gain_correction(monkeypatch):
     # Mock original EAP from metadata
     monkeypatch.setattr(
         eap_gain,
-        "compute_antenna_pattern_gain_from_metadata",
+        "_compute_antenna_pattern_gain_from_metadata",
         lambda **kwargs: np.array([2, 2, 2]),
     )
 
@@ -130,7 +130,7 @@ def test_compute_eap_gain_correction(monkeypatch):
     # Mock AUX_CAL reader
     monkeypatch.setattr(
         eap_gain,
-        "get_elevation_antenna_pattern_from_aux_cal",
+        "_get_elevation_antenna_pattern_from_aux_cal",
         lambda **kwargs: (
             np.array([1, 1, 1]),
             np.array([0, 1, 2]),
