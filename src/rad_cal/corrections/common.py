@@ -7,13 +7,20 @@ Common utilities for corrections
 """
 
 from pathlib import Path
+from typing import Literal
 
 from lxml import etree
 from perseo_core.timing.precise_datetime import PreciseDateTime
 
+SensorNames = Literal["S1A", "S1B", "S1C", "S1D"]
+
 
 def get_aux_files(
-    l1_product_path: Path, aux_pp1_path: Path, aux_cal_path: Path, acquisition_time: PreciseDateTime
+    l1_product_path: Path,
+    aux_pp1_path: Path,
+    aux_cal_path: Path,
+    acquisition_time: PreciseDateTime,
+    sensor: SensorNames,
 ) -> tuple[Path, Path]:
     """Retrieve and validate auxiliary files
 
@@ -41,10 +48,18 @@ def get_aux_files(
     ns = {"s1auxsar": "http://www.esa.int/safe/sentinel-1.0/sentinel-1/auxiliary/sar"}
     aux_pp1_ins_config_id = int(aux_pp1_root.find(".//s1auxsar:instrumentConfigurationId", ns).text)
     aux_pp1_validity = PreciseDateTime.fromisoformat(aux_pp1_root.find(".//s1auxsar:validity", ns).text)
+    aux_pp1_sensor = aux_pp1_path.name.split("_")[0]
 
     aux_cal_root = etree.parse(aux_cal_path.joinpath("manifest.safe")).getroot()
     aux_cal_ins_config_id = int(aux_cal_root.find(".//s1auxsar:instrumentConfigurationId", ns).text)
     aux_cal_validity = PreciseDateTime.fromisoformat(aux_cal_root.find(".//s1auxsar:validity", ns).text)
+    aux_cal_sensor = aux_cal_path.name.split("_")[0]
+
+    if aux_pp1_sensor != sensor:
+        raise ValueError("Product ({}) and AUX_PP1 ({}) sensor names differ!".format(sensor, aux_pp1_sensor))
+
+    if aux_cal_sensor != sensor:
+        raise ValueError("Product ({}) and AUX_CAL ({}) sensor names differ!".format(sensor, aux_cal_sensor))
 
     if prod_ins_config_id != aux_pp1_ins_config_id:
         raise ValueError(

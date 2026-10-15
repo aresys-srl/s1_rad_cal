@@ -74,8 +74,8 @@ class TestGetAuxFiles:
     def test_get_aux_files_returns_correct_paths(self, tmp_path):
 
         product = tmp_path / "product"
-        aux_pp1 = tmp_path / "aux_pp1"
-        aux_cal = tmp_path / "aux_cal"
+        aux_pp1 = tmp_path / "S1D_aux_pp1"
+        aux_cal = tmp_path / "S1D_aux_cal"
 
         product.mkdir()
         aux_pp1.mkdir()
@@ -109,6 +109,7 @@ class TestGetAuxFiles:
             aux_pp1,
             aux_cal,
             acquisition_time,
+            "S1D",
         )
 
         assert aux_cal_xml.name == "aux-cal-test.xml"
@@ -117,8 +118,8 @@ class TestGetAuxFiles:
     def test_get_aux_files_fails_for_wrong_pp1_instrument_id(self, tmp_path):
 
         product = tmp_path / "product"
-        aux_pp1 = tmp_path / "aux_pp1"
-        aux_cal = tmp_path / "aux_cal"
+        aux_pp1 = tmp_path / "S1D_aux_pp1"
+        aux_cal = tmp_path / "S1D_aux_cal"
 
         product.mkdir()
         aux_pp1.mkdir()
@@ -156,6 +157,7 @@ class TestGetAuxFiles:
                 aux_pp1,
                 aux_cal,
                 acquisition_time,
+                "S1D",
             )
 
     def test_get_aux_files_fails_when_product_before_aux_validity(
@@ -164,8 +166,8 @@ class TestGetAuxFiles:
     ):
 
         product = tmp_path / "product"
-        aux_pp1 = tmp_path / "aux_pp1"
-        aux_cal = tmp_path / "aux_cal"
+        aux_pp1 = tmp_path / "S1D_aux_pp1"
+        aux_cal = tmp_path / "S1D_aux_cal"
 
         product.mkdir()
         aux_pp1.mkdir()
@@ -201,4 +203,95 @@ class TestGetAuxFiles:
                 aux_pp1,
                 aux_cal,
                 acquisition_time,
+                "S1D",
+            )
+
+    def test_get_aux_files_fails_when_sensor_names_differ_aux_pp1(
+        self,
+        tmp_path,
+    ):
+        product = tmp_path / "product"
+        aux_pp1 = tmp_path / "S1C_aux_pp1"
+        aux_cal = tmp_path / "S1D_aux_cal"
+
+        product.mkdir()
+        aux_pp1.mkdir()
+        aux_cal.mkdir()
+
+        self.create_product_manifest(product, 123)
+
+        self.create_aux_manifest(
+            aux_pp1,
+            instrument_config_id=123,
+            validity="2024-01-02T00:00:00",
+            aux_type="pp1",
+        )
+
+        self.create_aux_manifest(
+            aux_cal,
+            instrument_config_id=123,
+            validity="2024-01-02T00:00:00",
+            aux_type="cal",
+        )
+
+        self.create_aux_xml_files(aux_pp1)
+        self.create_aux_xml_files(aux_cal)
+
+        acquisition_time = PreciseDateTime.fromisoformat("2024-01-02T00:00:00")
+
+        with pytest.raises(
+            ValueError,
+            match="sensor names differ!",
+        ):
+            get_aux_files(
+                product,
+                aux_pp1,
+                aux_cal,
+                acquisition_time,
+                "S1D",
+            )
+
+    def test_get_aux_files_fails_when_sensor_names_differ_aux_cal(
+        self,
+        tmp_path,
+    ):
+        product = tmp_path / "product"
+        aux_pp1 = tmp_path / "S1D_aux_pp1"
+        aux_cal = tmp_path / "S1C_aux_cal"
+
+        product.mkdir()
+        aux_pp1.mkdir()
+        aux_cal.mkdir()
+
+        self.create_product_manifest(product, 123)
+
+        self.create_aux_manifest(
+            aux_pp1,
+            instrument_config_id=123,
+            validity="2024-01-02T00:00:00",
+            aux_type="pp1",
+        )
+
+        self.create_aux_manifest(
+            aux_cal,
+            instrument_config_id=123,
+            validity="2024-01-02T00:00:00",
+            aux_type="cal",
+        )
+
+        self.create_aux_xml_files(aux_pp1)
+        self.create_aux_xml_files(aux_cal)
+
+        acquisition_time = PreciseDateTime.fromisoformat("2024-01-02T00:00:00")
+
+        with pytest.raises(
+            ValueError,
+            match="sensor names differ!",
+        ):
+            get_aux_files(
+                product,
+                aux_pp1,
+                aux_cal,
+                acquisition_time,
+                "S1D",
             )

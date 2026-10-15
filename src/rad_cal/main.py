@@ -88,6 +88,7 @@ def run(
         aux_pp1_path=aux_pp1_path_new,
         aux_cal_path=aux_cal_path_new,
         acquisition_time=prod.acquisition_time,
+        sensor=prod.channels_list[0].split("-")[0].upper(),
     )
     aux_pp1_xml_path_original = get_aux_pp1_xml_path_from_product(l1_product_path)
     pf_name = output_path.joinpath("PF")
