@@ -264,10 +264,14 @@ def build_slc_blocks(metadata: S1ChannelMetadata, swath: str) -> list[DataBlock]
         lpb = metadata.burst_info.lines_per_burst
         sizes = [lpb] * metadata.burst_info.num
     else:
-        size = 2000
-        sizes = [size] * int(azimuth_axis.size // size)
+        block_size = 2000
+        n_full_blocks, remainder = divmod(azimuth_axis.size, block_size)
+        sizes = [block_size] * n_full_blocks
+        if remainder:
+            sizes.append(remainder)
 
-    starts = np.concatenate([[0], np.cumsum(sizes)[:-1]]).astype(int)
+    sizes_arr = np.asarray(sizes, dtype=int)
+    starts = np.cumsum(sizes_arr) - sizes_arr  # empty if there are no blocks
     return [
         DataBlock(
             first_line=int(s),
