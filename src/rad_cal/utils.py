@@ -22,6 +22,7 @@ from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
 logger = logging.getLogger(__name__)
 
 C: int = 299792458  # m/s
+MAX_BLOCK_LINES: int = 2000
 
 
 @dataclass(frozen=True)
@@ -254,7 +255,7 @@ def parse_swath_bounds(xml_path: str) -> dict[str, list[dict]]:
     return swaths
 
 
-def build_slc_blocks(metadata: S1ChannelMetadata, swath: str) -> list[DataBlock]:
+def build_slc_blocks(metadata: S1ChannelMetadata, swath: str, block_size: int = MAX_BLOCK_LINES) -> list[DataBlock]:
     """Build a list of SLC `DataBlock`"""
     range_axis = metadata.raster_info.samples.axis
     azimuth_axis = metadata.raster_info.lines.axis
@@ -264,7 +265,6 @@ def build_slc_blocks(metadata: S1ChannelMetadata, swath: str) -> list[DataBlock]
         lpb = metadata.burst_info.lines_per_burst
         sizes = [lpb] * metadata.burst_info.num
     else:
-        block_size = 2000
         n_full_blocks, remainder = divmod(azimuth_axis.size, block_size)
         sizes = [block_size] * n_full_blocks
         if remainder:
@@ -287,31 +287,39 @@ def build_slc_blocks(metadata: S1ChannelMetadata, swath: str) -> list[DataBlock]
     ]
 
 
-def build_grd_blocks(metadata: S1ChannelMetadata, metadata_file: Path) -> list[DataBlock]:
-    """Build a list of GRD `DataBlock`"""
+def build_grd_blocks(
+    metadata: S1ChannelMetadata, metadata_file: Path, max_block_lines: int = MAX_BLOCK_LINES
+) -> list[DataBlock]:
+    """Build a list of GRD `DataBlock`
+
+    Each swath bound is split in azimuth into sub-blocks of at most `max_block_lines` lines, so that the
+    ground-to-slant conversion, evaluated at the central azimuth time of each block, stays accurate.
+    """
     ground_axis = metadata.raster_info.samples.axis
     azimuth_axis = metadata.raster_info.lines.axis
-    blocks, idx = [], 0
+    blocks: list[DataBlock] = []
     for sw, bounds in parse_swath_bounds(xml_path=metadata_file).items():
         for bound in bounds:
             first_line, last_line = bound["firstAzimuth"], bound["lastAzimuth"]
             first_sample, last_sample = bound["firstRange"], bound["lastRange"]
-            slant = metadata.coordinate_conversions.evaluate_ground_to_slant(
-                azimuth_time=azimuth_axis[len(azimuth_axis) // 2],
-                ground_range=ground_axis[first_sample : last_sample + 1],
-            )
-            slant = 2 * slant / C
-            blocks.append(
-                DataBlock(
-                    first_line=first_line,
-                    first_sample=first_sample,
-                    n_lines=last_line - first_line + 1,
-                    n_samples=last_sample - first_sample + 1,
-                    azimuth_axis=azimuth_axis[first_line : last_line + 1],
-                    range_axis=slant,
-                    swath=sw,
-                    index=idx,
+            ground_range = ground_axis[first_sample : last_sample + 1]
+
+            for sub_first in range(first_line, last_line + 1, max_block_lines):
+                sub_last = min(sub_first + max_block_lines - 1, last_line)
+                slant = metadata.coordinate_conversions.evaluate_ground_to_slant(
+                    azimuth_time=azimuth_axis[(sub_first + sub_last) // 2],
+                    ground_range=ground_range,
                 )
-            )
-            idx += 1
+                blocks.append(
+                    DataBlock(
+                        first_line=sub_first,
+                        first_sample=first_sample,
+                        n_lines=sub_last - sub_first + 1,
+                        n_samples=last_sample - first_sample + 1,
+                        azimuth_axis=azimuth_axis[sub_first : sub_last + 1],
+                        range_axis=2 * slant / C,
+                        swath=sw,
+                        index=len(blocks),
+                    )
+                )
     return blocks
