@@ -53,7 +53,7 @@ def compute_eap_gain_correction(
     az_time = azimuth_times[len(azimuth_times) // 2]  # block center
 
     if dem is not None:
-        burst_area_dem = load_dem_from_sar_times(
+        dem_area = load_dem_from_sar_times(
             dem=dem,
             trajectory=channel_metadata.orbit,
             range_times=range_times,
@@ -62,16 +62,18 @@ def compute_eap_gain_correction(
         )
 
         look_angles = compute_terrain_corrected_look_angles(
-            dem_values=burst_area_dem.values,
-            dem_lat_axis=burst_area_dem.lat.values,
-            dem_lon_axis=burst_area_dem.lon.values,
+            dem_values=dem_area.values,
+            dem_lat_axis=dem_area.lat.values,
+            dem_lon_axis=dem_area.lon.values,
             trajectory=channel_metadata.orbit,
             range_times=range_times,
             azimuth_times=azimuth_times,
             radians=False,
         )
     else:
-        time_idx = np.argmin(abs(channel_metadata.antenna_pattern[swath].time_axis - az_time))
+        time_idx = (
+            np.ma.masked_greater(channel_metadata.antenna_pattern[swath].time_axis - az_time, 0).astype(float).argmax()
+        )
         look_angles = compute_look_angles(
             trajectory=channel_metadata.orbit,
             azimuth_time=az_time,
