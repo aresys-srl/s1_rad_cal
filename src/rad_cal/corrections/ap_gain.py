@@ -52,6 +52,18 @@ def compute_eap_gain_correction(
     aux_cal_xml_path = Path(aux_cal_xml_path)
     az_time = azimuth_times[len(azimuth_times) // 2]  # block center
 
+    antenna_pattern = channel_metadata.antenna_pattern[swath]
+    time_idx = np.ma.masked_greater(antenna_pattern.time_axis - az_time, 0).astype(float).argmax()
+
+    original_look_angles = compute_look_angles(
+        trajectory=channel_metadata.orbit,
+        azimuth_time=az_time,
+        range_times=range_times,
+        look_direction=channel_metadata.dataset_info.side_looking,
+        geodetic_altitude=antenna_pattern.terrain_height[time_idx],
+        radians=False,
+    )
+
     if dem is not None:
         dem_area = load_dem_from_sar_times(
             dem=dem,
@@ -71,52 +83,32 @@ def compute_eap_gain_correction(
             radians=False,
         )
     else:
-        time_idx = (
-            np.ma.masked_greater(channel_metadata.antenna_pattern[swath].time_axis - az_time, 0).astype(float).argmax()
-        )
-        look_angles = compute_look_angles(
-            trajectory=channel_metadata.orbit,
-            azimuth_time=az_time,
-            range_times=range_times,
-            look_direction=channel_metadata.dataset_info.side_looking,
-            geodetic_altitude=channel_metadata.antenna_pattern[swath].terrain_height[time_idx],
-            radians=False,
-        )
-        look_angles = np.broadcast_to(look_angles, (len(azimuth_times), len(range_times)))
+        look_angles = original_look_angles
 
-    block_look_angles = compute_look_angles(
-        trajectory=channel_metadata.orbit,
-        azimuth_time=az_time,
-        range_times=range_times,
-        look_direction=channel_metadata.dataset_info.side_looking,
-        radians=False,
-    )
     original_eap = _compute_antenna_pattern_gain_from_metadata(
         channel_metadata=channel_metadata,
         swath=swath,
         az_time=az_time,
-        look_angles_axis=block_look_angles,
-    )
-    antenna_pattern_id = (
-        np.ma.masked_greater(channel_metadata.antenna_pattern[swath].time_axis - az_time, 0).astype(float).argmax()
+        look_angles_axis=original_look_angles,
     )
     roll = apply_roll_correction(
-        roll=channel_metadata.antenna_pattern[swath].roll[antenna_pattern_id],
+        roll=antenna_pattern.roll[time_idx],
         mission_id=channel_metadata.general_info.mission_id,
         az_time=az_time,
     )
-    new_eap, new_look_angles = _get_elevation_antenna_pattern_from_aux_cal(
+    new_eap, new_eap_look_angles = _get_elevation_antenna_pattern_from_aux_cal(
         xml_path=aux_cal_xml_path, swath=swath, polarization=polarization, roll=roll
     )
-    new_eap = np.interp(look_angles, new_look_angles, new_eap)
-    eap_correction_raw = original_eap / new_eap
+    new_eap = np.interp(look_angles, new_eap_look_angles, new_eap)
 
+    eap_correction_raw = original_eap / new_eap
     eap_correction_abs = np.sqrt(abs(eap_correction_raw))
     eap_correction_phase = np.angle(eap_correction_raw)
 
     complex_correction = eap_correction_abs * np.exp(1j * eap_correction_phase)
 
-    return np.abs(complex_correction) if is_grd else complex_correction
+    correction = np.abs(complex_correction) if is_grd else complex_correction
+    return np.broadcast_to(correction, (len(azimuth_times), len(range_times)))
 
 
 def _compute_antenna_pattern_gain_from_metadata(

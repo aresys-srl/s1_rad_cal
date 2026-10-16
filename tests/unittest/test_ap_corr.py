@@ -154,6 +154,7 @@ def test_compute_eap_gain_correction(monkeypatch):
             "IW1": SimpleNamespace(
                 time_axis=np.array([0]),
                 roll=np.array([0]),
+                terrain_height=np.array([0]),
             )
         },
     )
@@ -163,11 +164,11 @@ def test_compute_eap_gain_correction(monkeypatch):
         swath="IW1",
         polarization="VV",
         aux_cal_xml_path="dummy.xml",
-        azimuth_times=np.linspace(0, 1, 4),
-        range_times=np.linspace(0.0004, 0.0006, 4),
+        azimuth_times=np.linspace(0, 1, 3),
+        range_times=np.linspace(0.0004, 0.0006, 3),
         dem=Path("path/to/dem"),
     )
 
-    expected = np.sqrt(2) * np.ones(3)
+    expected = np.sqrt(2) * np.ones((3, 3), dtype=np.complex64)
 
     np.testing.assert_allclose(result, expected)
