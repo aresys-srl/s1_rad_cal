@@ -16,7 +16,7 @@ if __name__ == "__main__":
     with open(REGISTRY_PATH, "r", encoding="UTF-8") as f_in:
         test_config = json.load(f_in)
     radcal_config = from_toml(test_config["full_processing"]["rad_cal_config"])
-    os.mkdir("output")
+    os.makedirs("output", exist_ok=True)
     output_path = Path("output")
     run(
         l1_product_path=test_config["full_processing"]["product"],

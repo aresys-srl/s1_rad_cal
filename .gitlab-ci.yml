@@ -95,6 +95,7 @@ integration_test_linux:
     - python -m pip install sct
     - python -m pip install sct-radiometric-analysis
     - python -m pip install sct_aresys_reader
+    - python scripts/integration_test_partial.py
     - python scripts/integration_test_full.py 
   parallel:
     matrix:
