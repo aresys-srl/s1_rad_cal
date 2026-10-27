@@ -1,5 +1,8 @@
 ---
 icon: lucide/badge-info
+tags:
+    - build
+    - version
 ---
 
 # Build
