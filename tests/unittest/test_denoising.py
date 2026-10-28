@@ -23,6 +23,7 @@ def run(
     azimuth_noise_vectors=None,
     range_noise_vectors=None,
     is_grd=False,
+    clipping=True,
 ):
     """
     Patch get_noise_vectors, call apply_denoising_correction, return result.
@@ -41,6 +42,7 @@ def run(
         range_noise_vectors=range_noise_vectors or [],
         scaling_conversion=scaling,
         is_grd=is_grd,
+        clipping=clipping,
     )
 
 
@@ -134,10 +136,16 @@ class TestAmplitudeBehaviour:
         result = run(monkeypatch, target, noise_value=0.0)
         np.testing.assert_allclose(result, target, atol=1e-6)
 
-    def test_output_magnitude_reduced_by_noise(self, monkeypatch):
+    def test_output_magnitude_reduced_by_noise_slc(self, monkeypatch):
         """Noise must reduce, never increase, the magnitude."""
         target = np.array([[3 + 4j]], dtype=np.complex64)  # power = 25
         result = run(monkeypatch, target, noise_value=9.0)  # corrected power = 16
+        np.testing.assert_allclose(np.abs(result[0, 0]), 4.0, atol=1e-6)
+
+    def test_output_magnitude_reduced_by_noise_grd(self, monkeypatch):
+        """Noise must reduce, never increase, the magnitude."""
+        target = np.array([[5.0]], dtype=np.float64)  # power = 25
+        result = run(monkeypatch, target, noise_value=9.0, is_grd=True)  # corrected power = 16
         np.testing.assert_allclose(np.abs(result[0, 0]), 4.0, atol=1e-6)
 
     def test_power_exceeds_noise_exact_formula(self, monkeypatch):
@@ -148,8 +156,22 @@ class TestAmplitudeBehaviour:
         expected = np.sqrt(amplitude**2 - noise)  # sqrt(16) = 4
         np.testing.assert_allclose(np.abs(result[0, 0]), expected, atol=1e-6)
 
+    def test_negative_values_noise_exceeds_power_no_clipping_slc(self, monkeypatch):
+        amplitude, noise = 2.0, 9.0
+        target = np.array([[amplitude + 0j]], dtype=np.complex64)
+        result = run(monkeypatch, target, noise_value=noise, clipping=False)
+        expected = -np.sqrt(5.0) + 0j
+        np.testing.assert_allclose(result[0, 0], expected, atol=1e-6)
 
-class TestClippingBehaviour:
+    def test_negative_values_noise_exceeds_power_no_clipping_grd(self, monkeypatch):
+        amplitude, noise = 2.0, 9.0
+        target = np.array([[amplitude]], dtype=np.float64)
+        result = run(monkeypatch, target, noise_value=noise, is_grd=True, clipping=False)
+        expected = -np.sqrt(5.0)
+        np.testing.assert_allclose(result[0, 0], expected, atol=1e-6)
+
+
+class TestClippingBehavior:
     def test_noise_larger_than_power_outputs_zero(self, monkeypatch):
         """When noise > power the output must be exactly zero (no imaginary amplitude)."""
         target = np.array([[1 + 0j]], dtype=np.complex64)  # power = 1
@@ -159,6 +181,30 @@ class TestClippingBehaviour:
     def test_noise_equals_power_outputs_zero(self, monkeypatch):
         target = np.array([[1 + 0j]], dtype=np.complex64)
         result = run(monkeypatch, target, noise_value=1.0)
+        assert result[0, 0] == 0.0
+
+
+class TestNonClippingBehavior:
+    def test_noise_larger_than_power_outputs_negative_slc(self, monkeypatch):
+        """When noise > power the output goes below zero (no imaginary amplitude)."""
+        target = np.array([[1 + 0j]], dtype=np.complex64)  # power = 1
+        result = run(monkeypatch, target, noise_value=2.0, clipping=False)  # noise > power
+        assert result[0, 0] == -1.0
+
+    def test_noise_equals_power_outputs_zero_slc(self, monkeypatch):
+        target = np.array([[1 + 0j]], dtype=np.complex64)
+        result = run(monkeypatch, target, noise_value=1.0, clipping=False)
+        assert result[0, 0] == 0.0
+
+    def test_noise_larger_than_power_outputs_negative_grd(self, monkeypatch):
+        """When noise > power the output goes below zero (no imaginary amplitude)."""
+        target = np.array([[1.0]], dtype=np.float64)
+        result = run(monkeypatch, target, noise_value=2.0, is_grd=True, clipping=False)
+        assert result[0, 0] == -1.0
+
+    def test_noise_equals_power_outputs_zero_grd(self, monkeypatch):
+        target = np.array([[1.0]], dtype=np.float64)
+        result = run(monkeypatch, target, noise_value=1.0, is_grd=True, clipping=False)
         assert result[0, 0] == 0.0
 
 

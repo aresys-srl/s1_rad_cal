@@ -82,6 +82,8 @@ def run(
     logger.info(summary)
     if config.corrections.eap.enabled:
         logger.info(f"DEM source for EAP correction: {config.corrections.eap.dem}")
+    if config.corrections.denoising.enabled and config.corrections.denoising.clipping:
+        logger.info("Negative pixel values after de-noising will be clipped to 0")
 
     prod = open_product(l1_product_path)
     aux_cal_xml_path_new, aux_pp1_xml_path_new = get_aux_files(
@@ -183,6 +185,7 @@ def run(
                     range_noise_vectors=list_range_noise_vectors,
                     scaling_conversion=scaling_factor,
                     is_grd=is_grd,
+                    clipping=config.corrections.denoising.clipping,
                 )
 
             radiometric_correction = eap_gain_correction * abs_cal_correction * proc_gain_correction

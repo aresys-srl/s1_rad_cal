@@ -20,6 +20,7 @@ def apply_denoising_correction(
     range_noise_vectors: list[S1RangeNoiseVector],
     scaling_conversion: float,
     is_grd: bool,
+    clipping: bool,
 ) -> npt.NDArray[np.complex64]:
     """Apply thermal denoising vectors to ``target_area``
 
@@ -41,6 +42,8 @@ def apply_denoising_correction(
         radiometric data scaling factor
     is_grd : bool
         boolean to flag GRD product
+    clipping : bool
+        whether to clip to 0 when applying denoising
 
     Returns
     -------
@@ -77,10 +80,19 @@ def apply_denoising_correction(
     power = np.abs(target_area) ** 2
 
     if is_grd:
-        return np.sqrt(np.maximum(power - noise_array, 0.0))
+        return (
+            np.sqrt(np.maximum(power - noise_array, 0.0))
+            if clipping
+            else np.sign(power - noise_array) * np.sqrt(np.abs(power - noise_array))
+        )
 
     scale = np.zeros_like(power)
     valid = (power > 0) & np.isfinite(power) & np.isfinite(noise_array)
-    scale[valid] = np.sqrt(np.maximum(power[valid] - noise_array[valid], 0.0) / power[valid])
+    scale[valid] = (
+        np.sqrt(np.maximum(power[valid] - noise_array[valid], 0.0) / power[valid])
+        if clipping
+        else np.sign(power[valid] - noise_array[valid])
+        * np.sqrt(np.abs(power[valid] - noise_array[valid]) / power[valid])
+    )
     target_area = target_area * scale
     return target_area

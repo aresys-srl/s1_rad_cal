@@ -22,6 +22,7 @@ class EAPCorrection:
 @dataclass
 class Denoising:
     enabled: bool = False
+    clipping: bool = True
     external_noise_vector_folder: Path | None = None
 
 
@@ -78,6 +79,7 @@ def from_toml(path: str | Path) -> Config:
             absolute_calibration=corrections_cfg["absolute_calibration"],
             denoising=Denoising(
                 enabled=denoising_cfg["enabled"],
+                clipping=denoising_cfg.get("clipping", True),
                 external_noise_vector_folder=denoising_cfg.get(
                     "ext_noise_vector_folder",
                     None,
@@ -85,8 +87,3 @@ def from_toml(path: str | Path) -> Config:
             ),
         ),
     )
-
-
-if __name__ == "__main__":
-    config = Config()
-    print(config)
