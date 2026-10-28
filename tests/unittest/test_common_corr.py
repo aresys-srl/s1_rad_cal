@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from perseo_core.timing.precise_datetime import PreciseDateTime
 
-from rad_cal.corrections.common import apply_roll_correction, get_aux_files
+from s1_rad_cal.corrections.common import apply_roll_correction, get_aux_files
 
 
 class TestApplyRollCorrection:

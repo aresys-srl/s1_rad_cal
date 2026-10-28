@@ -1,5 +1,5 @@
 [project]
-name = "rad-cal"
+name = "s1-rad-cal"
 description = "Radiometric re-calibration tool for Sentinel1 products."
 authors = [{ name = "Aresys S.R.L.", email = "info@aresys.it" }]
 requires-python = ">=3.11"
@@ -29,7 +29,7 @@ test = ["pytest", "pytest-cov"]
 docs = ["zensical", "mkdocstrings-python"]
 
 [project.scripts]
-rad-cal = "rad_cal.cli:app"
+s1-rad-cal = "s1_rad_cal.cli:app"
 
 
 [build-system]
@@ -37,7 +37,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "src/rad_cal/__init__.py"
+path = "src/s1_rad_cal/__init__.py"
 
 [tool.hatch.build.targets.sdist]
 only-include = ["src", "tests", "docs"]
@@ -53,7 +53,7 @@ addopts = [
     "--strict-markers",
     "--strict-config",
     "--tb=short",
-    "--cov=rad_cal",
+    "--cov=s1_rad_cal",
     "--cov-report=term-missing",
     "--cov-report=html",
     "--no-cov-on-fail",

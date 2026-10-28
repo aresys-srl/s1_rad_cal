@@ -88,7 +88,7 @@ def _compile_dataset_info(arepytools_dataset_info: mtd.DataSetInfo, metadata: S1
     arepytools_dataset_info.projection = metadata.dataset_info.projection
     arepytools_dataset_info.acquisition_station = ""
     arepytools_dataset_info.processing_center = ""
-    arepytools_dataset_info.processing_software = "rad-cal"
+    arepytools_dataset_info.processing_software = "s1-rad-cal"
     arepytools_dataset_info.side_looking = metadata.dataset_info.side_looking
     arepytools_dataset_info.fc_hz = metadata.dataset_info.fc_hz
 

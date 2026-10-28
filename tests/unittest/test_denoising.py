@@ -5,7 +5,7 @@
 
 import numpy as np
 
-from rad_cal.corrections.denoising import apply_denoising_correction
+from s1_rad_cal.corrections.denoising import apply_denoising_correction
 
 SWATH = "IW1"
 
@@ -29,7 +29,7 @@ def run(
     Centralises monkeypatching so individual tests stay focused on assertions.
     """
     monkeypatch.setattr(
-        "rad_cal.corrections.denoising.get_noise_vectors",
+        "s1_rad_cal.corrections.denoising.get_noise_vectors",
         lambda **_kwargs: make_noise_vectors(target.shape, noise_value),
     )
     return apply_denoising_correction(

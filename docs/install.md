@@ -16,5 +16,5 @@ tags:
 To install this package using ``pip``:
 
 ```bash title="install with pip"
-pip install rad-cal
+pip install s1-rad-cal
 ```

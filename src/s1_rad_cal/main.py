@@ -20,14 +20,14 @@ from eo_products.sentinel1.reader import (
 )
 from eo_products.sentinel1.utilities import S1L1ProductType
 
-from rad_cal.config import Config
-from rad_cal.corrections.abs_cal import compute_absolute_calibration_correction
-from rad_cal.corrections.ap_gain import compute_eap_gain_correction
-from rad_cal.corrections.common import get_aux_files
-from rad_cal.corrections.denoising import apply_denoising_correction
-from rad_cal.corrections.proc_gain import compute_processing_gain_correction, get_aux_pp1_xml_path_from_product
-from rad_cal.corrections.radiometric_conversion import radiometric_quantity_conversion
-from rad_cal.utils import build_grd_blocks, build_slc_blocks, create_pf_metadata, resolve_noise_path
+from s1_rad_cal.config import Config
+from s1_rad_cal.corrections.abs_cal import compute_absolute_calibration_correction
+from s1_rad_cal.corrections.ap_gain import compute_eap_gain_correction
+from s1_rad_cal.corrections.common import get_aux_files
+from s1_rad_cal.corrections.denoising import apply_denoising_correction
+from s1_rad_cal.corrections.proc_gain import compute_processing_gain_correction, get_aux_pp1_xml_path_from_product
+from s1_rad_cal.corrections.radiometric_conversion import radiometric_quantity_conversion
+from s1_rad_cal.utils import build_grd_blocks, build_slc_blocks, create_pf_metadata, resolve_noise_path
 
 logger = logging.getLogger(__name__)
 
@@ -187,6 +187,7 @@ def run(
 
             radiometric_correction = eap_gain_correction * abs_cal_correction * proc_gain_correction
             target_area_recal = target_area * radiometric_correction
+
             write_raster_with_raster_info(
                 raster_file=channel_raster_file,
                 data=target_area_recal,

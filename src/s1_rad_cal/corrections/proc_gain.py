@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 from lxml import etree
 
-from rad_cal import AUX_PP1_DATASET
+from s1_rad_cal import AUX_PP1_DATASET
 
 logger = logging.getLogger(__name__)
 

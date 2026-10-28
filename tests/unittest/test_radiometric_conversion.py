@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
 
-import rad_cal.corrections.radiometric_conversion as radiometric_conversion
+import s1_rad_cal.corrections.radiometric_conversion as radiometric_conversion
 
 
 class TestComputeIncidenceAngles:

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-import rad_cal.corrections.proc_gain as pg
+import s1_rad_cal.corrections.proc_gain as pg
 
 TEST_DATA = "data/AUX_PP1/S1C_AUX_PP1_V20241204T000000_G20241204T092526.SAFE/data/s1c-aux-pp1.xml"
 SAFE_NS = "http://www.esa.int/safe/sentinel-1.0"
@@ -101,7 +101,7 @@ def test_returns_aux_pp1_xml_path(tmp_path, monkeypatch):
     expected_xml = data_dir / "aux_pp1.xml"
     expected_xml.write_text("<auxiliary-data/>")
 
-    monkeypatch.setattr("rad_cal.corrections.proc_gain.AUX_PP1_DATASET", aux_dataset)
+    monkeypatch.setattr("s1_rad_cal.corrections.proc_gain.AUX_PP1_DATASET", aux_dataset)
 
     result = pg.get_aux_pp1_xml_path_from_product(product_dir)
 
@@ -121,7 +121,7 @@ def test_accepts_string_product_path(tmp_path, monkeypatch):
     expected_xml = data_dir / "associated.xml"
     expected_xml.write_text("<auxiliary-data/>")
 
-    monkeypatch.setattr("rad_cal.corrections.proc_gain.AUX_PP1_DATASET", tmp_path / "aux_dataset")
+    monkeypatch.setattr("s1_rad_cal.corrections.proc_gain.AUX_PP1_DATASET", tmp_path / "aux_dataset")
 
     result = pg.get_aux_pp1_xml_path_from_product(str(product_dir))
 
@@ -138,7 +138,7 @@ def test_raises_when_no_aux_pp1_xml_exists(tmp_path, monkeypatch):
     data_dir = tmp_path / "aux_dataset" / filename / "data"
     data_dir.mkdir(parents=True)
 
-    monkeypatch.setattr("rad_cal.corrections.proc_gain.AUX_PP1_DATASET", tmp_path / "aux_dataset")
+    monkeypatch.setattr("s1_rad_cal.corrections.proc_gain.AUX_PP1_DATASET", tmp_path / "aux_dataset")
 
     with pytest.raises(
         FileNotFoundError,
@@ -160,7 +160,7 @@ def test_raises_when_multiple_aux_pp1_xml_files_exist(tmp_path, monkeypatch):
     (data_dir / "first.xml").write_text("<auxiliary-data/>")
     (data_dir / "second.xml").write_text("<auxiliary-data/>")
 
-    monkeypatch.setattr("rad_cal.corrections.proc_gain.AUX_PP1_DATASET", tmp_path / "aux_dataset")
+    monkeypatch.setattr("s1_rad_cal.corrections.proc_gain.AUX_PP1_DATASET", tmp_path / "aux_dataset")
 
     with pytest.raises(
         FileNotFoundError,

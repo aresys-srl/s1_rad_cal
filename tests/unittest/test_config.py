@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
 
-from rad_cal.config import Config, from_toml
+from s1_rad_cal.config import Config, from_toml
 
 
 def test_from_toml(tmp_path):

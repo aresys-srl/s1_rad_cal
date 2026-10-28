@@ -15,8 +15,8 @@ from eo_products.sentinel1.utilities import S1ChannelMetadata
 from perseo_core.geometry.angles import compute_incidence_angles
 from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
 
-from rad_cal.core.angles import compute_terrain_corrected_incidence_angles
-from rad_cal.core.common import load_dem_from_sar_times
+from s1_rad_cal.core.angles import compute_terrain_corrected_incidence_angles
+from s1_rad_cal.core.common import load_dem_from_sar_times
 
 logger = logging.getLogger(__name__)
 

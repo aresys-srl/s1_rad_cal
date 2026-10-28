@@ -7,7 +7,7 @@ from arepytools.io import metadata as mtd
 from arepytools.io.metadata import EPolarization, ESideLooking
 from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
 
-from rad_cal.utils import (
+from s1_rad_cal.utils import (
     C,
     DataBlock,
     _compile_dataset_info,
@@ -47,7 +47,7 @@ class TestCompileDatasetInfo:
         assert result.projection == "GROUND_RANGE"
         assert result.acquisition_station == ""
         assert result.processing_center == ""
-        assert result.processing_software == "rad-cal"
+        assert result.processing_software == "s1-rad-cal"
         assert result.side_looking.value == "RIGHT"
 
 
@@ -146,7 +146,7 @@ class TestCreatePfMetadata:
 
         assert dataset_info.description == ("Radiometric Re-Calibrated Data")
         assert dataset_info.sensor_name == "S1A"
-        assert dataset_info.processing_software == "rad-cal"
+        assert dataset_info.processing_software == "s1-rad-cal"
         assert dataset_info.side_looking.value == "RIGHT"
 
     def test_create_pf_metadata_state_vectors(

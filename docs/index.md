@@ -6,9 +6,9 @@ tags:
     - radiometric re-calibration
 ---
 
-# Rad-Cal Tool
+# Radiometric Re-Calibration Tool
 
-``rad-cal`` is the Aresys' radiometric re-calibration tool for Sentinel-1 L1 SLC and GRD products.
+``s1-rad-cal`` is the Aresys' radiometric re-calibration tool for Sentinel-1 L1 SLC and GRD products.
 
 ## Corrections
 

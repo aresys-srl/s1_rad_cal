@@ -8,8 +8,8 @@ from types import SimpleNamespace
 
 import numpy as np
 
-import rad_cal.corrections.ap_gain as eap_gain
-from rad_cal.corrections.ap_gain import (
+import s1_rad_cal.corrections.ap_gain as eap_gain
+from s1_rad_cal.corrections.ap_gain import (
     _compute_antenna_pattern_gain_from_metadata,
     _get_elevation_antenna_pattern_from_aux_cal,
 )

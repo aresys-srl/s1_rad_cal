@@ -9,24 +9,24 @@ tags:
 
 # Command Line Interface (CLI)
 
-A command line interface has been developed to be used directly from a shell prompt to access rad-cal tool functionalities with an
+A command line interface has been developed to be used directly from a shell prompt to access ``s1-rad-cal`` tool functionalities with an
 easy to use approach.
 
-The main command line tool that can be accessed using the ``rad-cal`` command in your favorite shell.
+The main command line tool that can be accessed using the ``s1-rad-cal`` command in your favorite shell.
 
 ## Main CLI
 
-Rad-cal tool command line can be invoked in the terminal session as:
+``s1-rad-cal`` tool command line can be invoked in the terminal session as:
 
 ``` bash title="CLI Entry Point"
-rad-cal [--input/-in] [--output/-out] [--config/-c] [--help]
+s1-rad-cal [--input/-in] [--output/-out] [--config/-c] [--help]
 ```
 
 This is the entry point for the console script. Input file .json and output folder must be provided as paths, configuration is optional:
 if not provided, the default configuration will be used.
 
 ## Input file .json
-In order to run ``rad-cal`` user must provide an input file in .json format; the structure of such file is shown here:
+In order to run ``s1-rad-cal`` user must provide an input file in .json format; the structure of such file is shown here:
 
 ``` json title="Input file"
 {

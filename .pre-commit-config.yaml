@@ -20,5 +20,5 @@ repos:
           [
             "-rn", # Only display messages
             "-sn", # Don't display the score
-            "src/rad_cal"
+            "src/s1_rad_cal"
           ]

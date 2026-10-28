@@ -9,16 +9,16 @@ import numpy as np
 import pytest
 from perseo_core.geometry.angles import compute_incidence_angles_core
 
-import rad_cal.core.angles as compute_angles
-import rad_cal.core.common as angles_common
-from rad_cal.core.angles import (
+import s1_rad_cal.core.angles as compute_angles
+import s1_rad_cal.core.common as angles_common
+from s1_rad_cal.core.angles import (
     _geocode_dem_to_sar_raster,
     _look_angles_from_ecef_positions,
     compute_terrain_corrected_incidence_angles,
     compute_terrain_corrected_look_angles,
     compute_terrain_normal,
 )
-from rad_cal.core.common import _antimeridian_safe_lon_bounds, _compute_footprint_from_times, load_dem_from_sar_times
+from s1_rad_cal.core.common import _antimeridian_safe_lon_bounds, _compute_footprint_from_times, load_dem_from_sar_times
 
 from .reference import compute_terrain_normal_numeric
 

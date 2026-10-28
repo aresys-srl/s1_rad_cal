@@ -7,8 +7,8 @@ import numpy as np
 from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
 from sct_radiometric_analysis.main import full_average_elevation_profiles_analysis
 
-from rad_cal.config import from_toml
-from rad_cal.main import run
+from s1_rad_cal.config import from_toml
+from s1_rad_cal.main import run
 
 REGISTRY_PATH = "tests/integration_tests/test_registry.json"
 

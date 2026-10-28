@@ -8,8 +8,8 @@ from pathlib import Path
 
 import typer
 
-from rad_cal.config import Config, from_toml
-from rad_cal.main import run
+from s1_rad_cal.config import Config, from_toml
+from s1_rad_cal.main import run
 
 app = typer.Typer(name="rad-cal", help="Apply radiometric calibration corrections.")
 
