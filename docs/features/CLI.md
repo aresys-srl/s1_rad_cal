@@ -64,6 +64,7 @@ dem = "optional/path/to/dem/tiles/folder" # (3)!
 
 [corrections.denoising]
 enabled = true
+clipping = true
 ext_noise_vector_folder = "optional/path/to/folder/containing/noise/files" # (4)!
 ```
 
