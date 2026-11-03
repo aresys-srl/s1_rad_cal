@@ -13,6 +13,7 @@ tags:
 **Additional Features**
 
 - Making clipping in de-noising optional.
+- Adding atmospheric attenuation computation.
 
 ## v0.1.0
 
