@@ -10,19 +10,23 @@ tags:
 
 ``s1-rad-cal`` is the Aresys' radiometric re-calibration tool for Sentinel-1 L1 SLC and GRD products.
 
-## Corrections
+## MPC Corrections
 
-This tool applies a set of radiometric corrections to Sentinel-1 Level-1 products in order to improve the consistency and accuracy of radar backscatter measurements. The supported corrections are:
+On the basis of the information provided by the [Sentinel-1 MPC](https://sar-mpc.eu/), this tool applies a set of radiometric corrections to Sentinel-1 Level-1 products in order to improve the consistency and accuracy of radar backscatter measurements. The supported MPC corrections are:
 
 - Absolute calibration constant correction
 - Processing gain correction
 - Elevation antenna pattern (EAP) correction
 
-Each correction requires auxiliary information provided by Sentinel-1 calibration products. Refer to the [radiometric corrections](features\corrections.md) for further information.
+Each of these corrections requires auxiliary information provided by Sentinel-1 calibration products. Refer to the [radiometric corrections](features\corrections.md) for further information.
 
 ## Thermal De-Noising
 
 This tool can remove thermal noise annotated in products metadata through the noise vectors. Refer to [thermal de-noising](features\denoising.md) for further information.
+
+## Atmospheric Attenuation
+
+This tool can compensate for attenuation by atmospheric gases by applying the [Recommendation ITU-R 676](https://www.itu.int/rec/R-REC-p.676/en). Refer to [atmospheric attenuation](features/atmospheric_attenutation.md) for further information.
 
 ## Local Incidence Angle
 
