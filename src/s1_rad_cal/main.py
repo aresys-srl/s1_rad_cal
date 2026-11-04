@@ -10,6 +10,7 @@ import logging
 import sys
 from pathlib import Path
 
+import xarray as xr
 from arepytools.io import create_product_folder, write_metadata, write_raster_with_raster_info
 from eo_products.sentinel1.reader import (
     open_product,
@@ -23,6 +24,7 @@ from eo_products.sentinel1.utilities import S1L1ProductType
 from s1_rad_cal.config import Config
 from s1_rad_cal.corrections.abs_cal import compute_absolute_calibration_correction
 from s1_rad_cal.corrections.ap_gain import compute_eap_gain_correction
+from s1_rad_cal.corrections.atmospheric_attenuation import compute_atmospheric_attenuation
 from s1_rad_cal.corrections.common import get_aux_files
 from s1_rad_cal.corrections.denoising import apply_denoising_correction
 from s1_rad_cal.corrections.proc_gain import compute_processing_gain_correction, get_aux_pp1_xml_path_from_product
@@ -73,6 +75,7 @@ def run(
     - Absolute calibration factor           : {"ON" if config.corrections.absolute_calibration else "OFF"}
     - Processing gain                       : {"ON" if config.corrections.processing_gain else "OFF"}
     - Thermal denoising                     : {"ON" if config.corrections.denoising.enabled else "OFF"}
+    - Atmospheric attenuation               : {"ON" if config.corrections.atmospheric_attenuation.enabled else "OFF"}
 
     Auxiliary files in use
     ----------------------
@@ -84,6 +87,9 @@ def run(
         logger.info(f"DEM source for EAP correction: {config.corrections.eap.dem}")
     if config.corrections.denoising.enabled and config.corrections.denoising.clipping:
         logger.info("Negative pixel values after de-noising will be clipped to 0")
+    if config.corrections.atmospheric_attenuation.enabled:
+        logger.info(f"Atmospheric attenuation computation mode: {config.corrections.atmospheric_attenuation.mode}")
+        logger.info(f"Weather dataset in use: {config.corrections.atmospheric_attenuation.weather_dataset_path}")
 
     prod = open_product(l1_product_path)
     aux_cal_xml_path_new, aux_pp1_xml_path_new = get_aux_files(
@@ -164,17 +170,6 @@ def run(
             else:
                 abs_cal_correction = 1.0
 
-            if not is_grd:
-                target_area = radiometric_quantity_conversion(
-                    target_area=target_area,
-                    channel_metadata=metadata,
-                    swath=swath,
-                    azimuth_times=block.azimuth_axis,
-                    range_times=block.range_axis,
-                    output_quantity=config.output_quantity,
-                    dem=config.incidence_angles_dem,
-                )
-
             if config.corrections.denoising.enabled:
                 target_area = apply_denoising_correction(
                     target_area=target_area,
@@ -188,8 +183,29 @@ def run(
                     clipping=config.corrections.denoising.clipping,
                 )
 
+            if config.corrections.atmospheric_attenuation.enabled:
+                weather_ds = xr.open_dataset(config.corrections.atmospheric_attenuation.weather_dataset_path)
+                atmospheric_attenuation_db = compute_atmospheric_attenuation(
+                    channel_metadata=metadata,
+                    azimuth_times=block.azimuth_axis,
+                    range_times=block.range_axis,
+                    weather=weather_ds,
+                    mode=config.corrections.atmospheric_attenuation.mode,
+                )
+                target_area *= 10 ** (atmospheric_attenuation_db / 10)
+
             radiometric_correction = eap_gain_correction * abs_cal_correction * proc_gain_correction
             target_area_recal = target_area * radiometric_correction
+
+            target_area = radiometric_quantity_conversion(
+                target_area=target_area,
+                channel_metadata=metadata,
+                swath=swath,
+                azimuth_times=block.azimuth_axis,
+                range_times=block.range_axis,
+                output_quantity=config.output_quantity,
+                dem=config.incidence_angles_dem,
+            )
 
             write_raster_with_raster_info(
                 raster_file=channel_raster_file,
