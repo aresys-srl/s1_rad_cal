@@ -14,6 +14,7 @@ tags:
 
 - Making clipping in de-noising optional.
 - Adding atmospheric attenuation computation.
+- Adding ERA5 climate data downloader and its CLI.
 
 ## v0.1.0
 
