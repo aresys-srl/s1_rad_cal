@@ -35,10 +35,9 @@ def main() -> int:
 
     build_info_template = root / "docs" / "about" / "build.template.md"
     build_info = build_info_template.read_text(encoding="utf-8")
-
     build_info = build_info.replace("__SHA__", sha).replace("__TAG__", tag).replace("__DATE__", date)
-
-    (root / "docs" / "about" / "build.md").write_text(build_info, encoding="utf-8")
+    build_info_template.with_name("build.md").write_text(build_info, encoding="utf-8")
+    build_info_template.unlink()
 
     subprocess.run(["zensical", "build", "-f", str(root / "zensical.toml")], check=True)
 
