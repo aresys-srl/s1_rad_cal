@@ -34,11 +34,6 @@ The input file must have the following structure:
 }
 ```
 
-<figure>
-  <img src="docs\assets\correction_example.png" alt="Effect of radiometric corrections on S1C IW1 data over northern Italy">
-  <figcaption>Effect of radiometric corrections on S1C IW1 data over Northern Italy, taking into account terrain-induced variations</figcaption>
-</figure>
-
 ## License
 
 This project is licensed under the MIT License.
