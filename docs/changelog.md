@@ -8,6 +8,12 @@ tags:
 
 # Changelog
 
+## v1.1.0
+
+**New Features**
+
+- Adding atmospheric attenuation computation.
+
 ## v1.0.0
 
 **Additional Features**

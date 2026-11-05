@@ -14,6 +14,7 @@ dependencies = [
     "xarray",
     "arepytools",
     "typer",
+    "itur",
 ]
 dynamic = ["version"]
 classifiers = [
