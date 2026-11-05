@@ -13,6 +13,7 @@ tags:
 **New Features**
 
 - Adding atmospheric attenuation computation.
+- Adding ERA5 climate data downloader and its CLI.
 
 ## v1.0.0
 

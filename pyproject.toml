@@ -15,6 +15,7 @@ dependencies = [
     "arepytools",
     "typer",
     "itur",
+    "cdsapi"
 ]
 dynamic = ["version"]
 classifiers = [
