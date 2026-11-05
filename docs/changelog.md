@@ -8,12 +8,12 @@ tags:
 
 # Changelog
 
-## v0.2.0
+## v1.0.0
 
 **Additional Features**
 
 - Making clipping in de-noising optional.
 
-## v0.1.0
+## v0.0.0.dev0
 
 First development version.
