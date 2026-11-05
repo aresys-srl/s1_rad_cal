@@ -147,6 +147,52 @@ jobs:
             _build/pytest-coverage-*.xml
           retention-days: 14
 
+  integration_test_linux:
+    if: >-
+      !startsWith(github.ref, 'refs/tags/') ||
+      startsWith(github.ref_name, 's1-rad-cal-v')
+
+    runs-on: k8s-runners
+    container:
+      image: quay.io/pypa/manylinux_2_28_x86_64
+
+    timeout-minutes: 120
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Select Python ${{ matrix.python }}
+        run: |
+          case "${{ matrix.python }}" in
+            3.11) echo "/opt/python/cp311-cp311/bin" >> $GITHUB_PATH ;;
+            3.12) echo "/opt/python/cp312-cp312/bin" >> $GITHUB_PATH ;;
+            3.13) echo "/opt/python/cp313-cp313/bin" >> $GITHUB_PATH ;;
+            3.14) echo "/opt/python/cp314-cp314/bin" >> $GITHUB_PATH ;;
+          esac
+
+      - name: Install package and readers
+        run: |
+            python -m pip install .
+            python -m pip install sct
+            python -m pip install sct-radiometric-analysis
+            python -m pip install sct_aresys_reader
+
+      - name: Run integration tests
+        run: |
+            python scripts/integration_test_partial.py
+            python scripts/integration_test_full.py 
+
   build:
     runs-on: ubuntu-latest
     container:
