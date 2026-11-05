@@ -28,6 +28,11 @@ absolute_calibration = true
 enabled = true
 dem = "path/to/dem"
 
+[corrections.atmospheric_attenuation]
+enabled = false
+mode = "approx"
+weather_dataset_path = "weather_ds.nc"
+
 [corrections.denoising]
 enabled = true
 """
@@ -40,6 +45,8 @@ enabled = true
     assert cfg.corrections.eap.dem == Path("path/to/dem")
     assert cfg.corrections.processing_gain is True
     assert cfg.corrections.absolute_calibration is True
+    assert cfg.corrections.atmospheric_attenuation.enabled is False
+    assert cfg.corrections.atmospheric_attenuation.mode == "approx"
     assert cfg.corrections.denoising.enabled is True
     assert cfg.corrections.denoising.external_noise_vector_folder is None
     assert cfg.output_quantity == SARRadiometricQuantity.BETA_NOUGHT
