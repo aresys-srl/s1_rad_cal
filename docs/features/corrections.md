@@ -80,6 +80,6 @@ For GRD products, only the module of the $\text{EAP correction}$ is considered.
 ## Examples
 
 <figure>
-  <img src="/assets/correction_example.png" alt="Effect of radiometric corrections on S1C IW1 data over northern Italy">
+  <img src="../assets/correction_example.png" alt="Effect of radiometric corrections on S1C IW1 data over northern Italy">
   <figcaption>Effect of radiometric corrections on S1C IW1 data over Northern Italy, taking into account terrain-induced variations</figcaption>
 </figure>

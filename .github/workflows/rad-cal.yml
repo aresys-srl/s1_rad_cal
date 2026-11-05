@@ -184,3 +184,35 @@ jobs:
           name: documentation-site
           path: site/
           retention-days: 14
+  
+  publish_docs:
+    if: >
+      ${{
+        (startsWith(github.ref_name, 's1-rad-cal-v') || startsWith(github.ref_name, 'docs-v'))
+      }}
+    needs: [doc_build]
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Download docs site
+        uses: actions/download-artifact@v8
+        with:
+          name: documentation-site
+          path: site
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
