@@ -184,13 +184,45 @@ jobs:
           name: documentation-site
           path: site/
           retention-days: 14
-  
+
+  publish:
+    needs: [ruff, pylint, unittest_linux, unittest_windows, build]
+    if: startsWith(github.ref_name, 's1-rad-cal-v')
+
+    runs-on: ubuntu-latest
+
+    environment: pypi-s1-rad-cal
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+
+      - name: Clean dist
+        run: |
+          find dist -type f ! -name "*.whl" ! -name "*.tar.gz" -delete
+
+      - name: Show artifacts
+        run: |
+          find dist -type f -maxdepth 2
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+
   publish_docs:
     if: >
       ${{
-        (startsWith(github.ref_name, 's1-rad-cal-v') || startsWith(github.ref_name, 'docs-v'))
+        (startsWith(github.ref_name, 's1-rad-cal-v') || startsWith(github.ref_name, 'docs-v')) &&
+        (needs.publish.result == 'success' || needs.publish.result == 'skipped')
       }}
-    needs: [doc_build]
+    needs: [doc_build, publish]
 
     runs-on: ubuntu-latest
 
