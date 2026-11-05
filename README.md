@@ -20,7 +20,7 @@ pip install s1-rad-cal
 ``s1-rad-cal`` command line can be invoked in the terminal session as:
 
 ```
-s1-rad-cal [--input/-in] [--output/-out] [--config/-c] [--help]
+s1-rad-cal process [--input/-in] [--output/-out] [--config/-c] [--help]
 ```
 
 Input file .json and output folder must be provided as paths, configuration is optional: if not provided, the default configuration will be used.
