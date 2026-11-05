@@ -1,4 +1,4 @@
-# rad-cal Radiometric-Calibration for Sentinel-1 L1 Products
+# Radiometric-Calibration for Sentinel-1 L1 Products
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://python.org)
