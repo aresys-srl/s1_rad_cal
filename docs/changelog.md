@@ -15,6 +15,10 @@ tags:
 - Adding atmospheric attenuation computation.
 - Adding ERA5 climate data downloader and its CLI.
 
+**Bug Fixing**
+
+- Fixing radiometric corrections application order.
+
 ## v1.0.0
 
 **Additional Features**
