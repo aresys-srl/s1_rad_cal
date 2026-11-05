@@ -3,6 +3,7 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://python.org)
 [![rad-cal CI](https://github.com/aresys-srl/s1_rad_cal/actions/workflows/rad-cal.yml/badge.svg)](https://github.com/aresys-srl/s1_rad_cal/actions/workflows/rad-cal.yml)
+[![PyPI version](https://img.shields.io/pypi/v/s1_rad_cal)](https://pypi.org/project/s1-rad-cal/)
 
 ``s1-rad-cal`` is the Aresys' radiometric re-calibration tool for Sentinel1 L1 SLC and GRD products:
 it offers a set of radiometric corrections with the aim of improving consistency and accuracy of radar backscatter measurements.
