@@ -5,32 +5,48 @@ authors = [{ name = "Aresys S.R.L.", email = "info@aresys.it" }]
 requires-python = ">=3.11"
 readme = "README.md"
 license = { file = "LICENSE.txt" }
-dependencies = ["eo_products>=1.1.0", "perseo_core", "perseo_quality", "scipy", "numpy", "xarray", "arepytools", "typer"]
+dependencies = [
+    "eo_products>=1.1.0",
+    "perseo_core",
+    "perseo_quality",
+    "scipy",
+    "numpy",
+    "xarray",
+    "arepytools",
+    "typer",
+]
 dynamic = ["version"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Education",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries",
     "Topic :: Utilities",
     "Topic :: Scientific/Engineering",
     "Typing :: Typed",
 ]
 
+[project.urls]
+Homepage = "https://github.com/aresys-srl/s1_rad_cal"
+Repository = "https://github.com/aresys-srl/s1_rad_cal"
+Documentation = "https://opensource.aresys.it/s1_rad_cal"
+
 [project.optional-dependencies]
-dev = ["ruff", "pylint"]
+dev = ["ruff>0.16", "pylint"]
 test = ["pytest", "pytest-cov"]
 docs = ["zensical", "mkdocstrings-python"]
 
 [project.scripts]
 s1-rad-cal = "s1_rad_cal.cli:app"
-
 
 [build-system]
 requires = ["hatchling"]
@@ -67,17 +83,6 @@ source = ["src"]
 skip_covered = true
 show_missing = true
 fail_under = 65
-
-[tool.ruff]
-line-length = 120
-output-format = "grouped"
-extend-exclude = [".venv", "docs"]
-
-[tool.ruff.format]
-docstring-code-format = true
-
-[tool.ruff.lint]
-select = ["E", "W", "F", "A", "B", "I"]
 
 [tool.pylint.master]
 fail-under = 8
