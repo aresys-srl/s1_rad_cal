@@ -188,10 +188,12 @@ jobs:
             python -m pip install sct-radiometric-analysis
             python -m pip install sct_aresys_reader
 
-      - name: Run integration tests
-        run: |
-            python scripts/integration_test_partial.py
-            python scripts/integration_test_full.py 
+      - name: Run integration test partial
+        run: python scripts/integration_test_partial.py
+      
+      - name: Run integration test full
+        run: python scripts/integration_test_full.py 
+            
 
   build:
     runs-on: ubuntu-latest
