@@ -70,5 +70,5 @@ denoising = true
 """
     )
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError):
         from_toml(config_file)

@@ -7,8 +7,9 @@ Rad-Cal Tool configuration
 """
 
 import tomllib
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from pathlib import Path
+from typing import Any, Callable, get_args
 
 from perseo_quality.core.generic_dataclasses import SARRadiometricQuantity
 
@@ -51,7 +52,67 @@ class Config:
     incidence_angles_dem: Path | None = None
 
 
+def _get_table(parent: dict[str, Any], key: str, name: str) -> dict[str, Any]:
+    """Return a TOML table, or an empty one if it is missing."""
+    table = parent.get(key, {})
+    if not isinstance(table, dict):
+        raise ValueError(f"[{name}] must be a table, got {type(table).__name__}")
+    return table
+
+
+def _check_unknown_keys(table: dict[str, Any], allowed: set[str], name: str) -> None:
+    """Reject unknown keys, so that typos don't silently fall back to defaults."""
+    unknown = set(table) - allowed
+    if unknown:
+        raise ValueError(f"Unknown key(s) in [{name}]: {sorted(unknown)}. Allowed keys: {sorted(allowed)}")
+
+
+def _build(
+    cls: type,
+    table: dict[str, Any],
+    name: str,
+    converters: dict[str, Callable[[Any], Any]] | None = None,
+):
+    """Instantiate a flat dataclass using only the keys present in the table.
+
+    Missing keys are not passed to the constructor, hence the dataclass
+    default applies.
+    """
+    converters = converters or {}
+    _check_unknown_keys(table, {f.name for f in fields(cls)}, name)
+    kwargs = {key: converters.get(key, lambda v: v)(value) for key, value in table.items()}
+    return cls(**kwargs)
+
+
+def _to_path(value: str | None) -> Path | None:
+    return Path(value) if value else None
+
+
+def _to_quantity(value: str) -> SARRadiometricQuantity:
+    try:
+        return SARRadiometricQuantity[f"{str(value).upper()}_NOUGHT"]
+    except KeyError:
+        valid = [q.name.removesuffix("_NOUGHT").lower() for q in SARRadiometricQuantity]
+        raise ValueError(f"Invalid radiometric_quantity {value!r}. Valid values: {valid}") from None
+
+
+def _validate_atmospheric_attenuation(cfg: AtmosphericAttenuation) -> None:
+    valid_modes = get_args(ComputationMode)
+    if valid_modes and cfg.mode not in valid_modes:
+        raise ValueError(f"Invalid atmospheric attenuation mode {cfg.mode!r}. Valid values: {list(valid_modes)}")
+
+    if not cfg.enabled:
+        return
+    if cfg.weather_dataset_path is None:
+        raise FileNotFoundError("Atmospheric attenuation is enabled: please provide a weather dataset .nc file")
+    if not cfg.weather_dataset_path.is_file():
+        raise FileNotFoundError(f"Weather dataset file {cfg.weather_dataset_path} does not exist")
+    if cfg.weather_dataset_path.suffix != ".nc":
+        raise ValueError(f"Weather dataset file {cfg.weather_dataset_path} is not a .nc file")
+
+
 def from_toml(path: str | Path) -> Config:
+    """Load the configuration from a TOML file; omitted fields use their defaults."""
 
     file = Path(path)
     if not file.is_file():
@@ -59,59 +120,56 @@ def from_toml(path: str | Path) -> Config:
     if file.suffix != ".toml":
         raise ValueError(f"Input file {file} is not a .toml configuration file")
 
-    with open(path, "rb") as f:
+    with open(file, "rb") as f:
         cfg = tomllib.load(f)
 
-    corrections_cfg = cfg["corrections"]
-    eap_cfg = corrections_cfg["eap"]
-    denoising_cfg = corrections_cfg["denoising"]
+    _check_unknown_keys(cfg, {"output", "corrections"}, "root")
 
-    atmospheric_attenuation_cfg = corrections_cfg["atmospheric_attenuation"]
-    weather_ds = atmospheric_attenuation_cfg.get("weather_dataset_path", None)
-    if atmospheric_attenuation_cfg.get("enabled", False):
-        if not weather_ds:
-            raise FileNotFoundError("Please provide a weather dataset .nc file")
-        if not Path(weather_ds).is_file():
-            raise FileNotFoundError(f"Weather dataset file {weather_ds} does not exist")
-        if Path(weather_ds).suffix != ".nc":
-            raise ValueError(f"Weather dataset file {file} is not a .nc file")
+    # [output]
+    output_cfg = _get_table(cfg, "output", "output")
+    _check_unknown_keys(output_cfg, {"radiometric_quantity", "incidence_angles_dem"}, "output")
+    config_kwargs: dict[str, Any] = {}
+    if "radiometric_quantity" in output_cfg:
+        config_kwargs["output_quantity"] = _to_quantity(output_cfg["radiometric_quantity"])
+    if "incidence_angles_dem" in output_cfg:
+        config_kwargs["incidence_angles_dem"] = _to_path(output_cfg["incidence_angles_dem"])
 
-    output_cfg = cfg["output"]
+    # [corrections] and its sub-tables
+    corrections_cfg = _get_table(cfg, "corrections", "corrections")
+    _check_unknown_keys(corrections_cfg, {f.name for f in fields(Corrections)}, "corrections")
 
-    eap_dem = eap_cfg.get("dem", None)
-    incidence_angles_dem = output_cfg.get("incidence_angles_dem", None)
-    if eap_dem is not None:
-        eap_dem = Path(eap_dem)
-    if incidence_angles_dem is not None:
-        incidence_angles_dem = Path(incidence_angles_dem)
+    corrections_kwargs: dict[str, Any] = {
+        key: value for key, value in corrections_cfg.items() if key in ("processing_gain", "absolute_calibration")
+    }
 
-    radiometric_quantity = output_cfg.get("radiometric_quantity", "beta")
+    if "eap" in corrections_cfg:
+        corrections_kwargs["eap"] = _build(
+            EAPCorrection,
+            _get_table(corrections_cfg, "eap", "corrections.eap"),
+            "corrections.eap",
+            {"dem": _to_path},
+        )
 
-    return Config(
-        output_quantity=SARRadiometricQuantity[f"{radiometric_quantity.upper()}_NOUGHT"],
-        incidence_angles_dem=incidence_angles_dem,
-        corrections=Corrections(
-            eap=EAPCorrection(
-                enabled=eap_cfg["enabled"],
-                dem=eap_dem,
-            ),
-            processing_gain=corrections_cfg["processing_gain"],
-            absolute_calibration=corrections_cfg["absolute_calibration"],
-            atmospheric_attenuation=AtmosphericAttenuation(
-                enabled=atmospheric_attenuation_cfg.get("enabled", False),
-                mode=atmospheric_attenuation_cfg.get("mode", False),
-                weather_dataset_path=Path(weather_ds),
-            ),
-            denoising=Denoising(
-                enabled=denoising_cfg["enabled"],
-                clipping=denoising_cfg.get("clipping", True),
-                external_noise_vector_folder=denoising_cfg.get(
-                    "ext_noise_vector_folder",
-                    None,
-                ),
-            ),
-        ),
-    )
+    if "atmospheric_attenuation" in corrections_cfg:
+        atmo = _build(
+            AtmosphericAttenuation,
+            _get_table(corrections_cfg, "atmospheric_attenuation", "corrections.atmospheric_attenuation"),
+            "corrections.atmospheric_attenuation",
+            {"weather_dataset_path": _to_path},
+        )
+        _validate_atmospheric_attenuation(atmo)
+        corrections_kwargs["atmospheric_attenuation"] = atmo
+
+    if "denoising" in corrections_cfg:
+        corrections_kwargs["denoising"] = _build(
+            Denoising,
+            _get_table(corrections_cfg, "denoising", "corrections.denoising"),
+            "corrections.denoising",
+            {"external_noise_vector_folder": _to_path},
+        )
+
+    config_kwargs["corrections"] = Corrections(**corrections_kwargs)
+    return Config(**config_kwargs)
 
 
 if __name__ == "__main__":
