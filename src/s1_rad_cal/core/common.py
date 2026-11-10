@@ -34,7 +34,7 @@ def _compute_footprint_from_times(
     ----------
     range_times : npt.NDArray[np.floating]
         range times
-    azimuth_times : npt.NDArray[np.floating]
+    azimuth_times : npt.NDArray
         azimuth times
     trajectory : Trajectory
         sensor trajectory
@@ -138,7 +138,7 @@ def load_dem_from_sar_times(
         sensor trajectory
     range_times : npt.NDArray[np.floating]
         range_times
-    azimuth_times : npt.NDArray[np.floating]
+    azimuth_times : npt.NDArray
         azimuth_times
     look_direction : SensorLookDirection
         sensor side looking
