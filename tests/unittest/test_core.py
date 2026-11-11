@@ -7,7 +7,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from perseo_core.geometry.angles import compute_incidence_angles_core
+from perseo_core.geometry.angles import compute_incidence_angles, compute_incidence_angles_core, compute_look_angles
+from perseo_core.geometry.navigation import CubicSplineTrajectory
 
 import s1_rad_cal.core.angles as compute_angles
 import s1_rad_cal.core.common as angles_common
@@ -20,7 +21,16 @@ from s1_rad_cal.core.angles import (
 )
 from s1_rad_cal.core.common import _antimeridian_safe_lon_bounds, _compute_footprint_from_times, load_dem_from_sar_times
 
-from .reference import compute_terrain_normal_numeric
+from .reference import (
+    AZIMUTH_TIMES,
+    DEM_LAT_AXIS,
+    DEM_LON_AXIS,
+    ORBIT_POSITIONS,
+    ORBIT_TIMES,
+    ORBIT_VELOCITIES,
+    RANGE_TIMES,
+    compute_terrain_normal_numeric,
+)
 
 
 class TestLookAnglesFromEcefPositions:
@@ -161,6 +171,28 @@ class TestComputeTerrainCorrectedLookAngles:
             radians=True,
         )
         np.testing.assert_allclose(angles_deg, np.rad2deg(angles_rad), atol=1e-10)
+
+    def test_terrain_corrected_look_angles_with_real_data(self):
+
+        orbit = CubicSplineTrajectory(times=ORBIT_TIMES, positions=ORBIT_POSITIONS, velocities=ORBIT_VELOCITIES)
+
+        terrain_corrected_look_angles = compute_terrain_corrected_look_angles(
+            dem_values=np.zeros((len(DEM_LAT_AXIS), len(DEM_LON_AXIS))),
+            dem_lat_axis=DEM_LAT_AXIS,
+            dem_lon_axis=DEM_LON_AXIS,
+            trajectory=orbit,
+            range_times=RANGE_TIMES,
+            azimuth_times=AZIMUTH_TIMES,
+        )
+
+        look_angles = np.zeros_like(terrain_corrected_look_angles)
+
+        for i in range(look_angles.shape[0]):
+            look_angles[i, :] = compute_look_angles(
+                trajectory=orbit, azimuth_time=AZIMUTH_TIMES[i], range_times=RANGE_TIMES, look_direction="RIGHT"
+            )
+
+        np.testing.assert_allclose(look_angles, terrain_corrected_look_angles, atol=1e-3)
 
 
 class TestComputeFootprintFromTimes:
@@ -489,6 +521,28 @@ class TestTerrainCorrectedIncidenceAngles:
             sensor_positions=FakeTrajectory().position(np.array([0.003]))[0], ground_points=np.array([0.0, 0.0, 1.0])
         )
         np.testing.assert_allclose(terrain_corrected_angles, perseo_angles, atol=1e-12)
+
+    def test_terrain_corrected_incidence_angles_with_real_data(self):
+
+        orbit = CubicSplineTrajectory(times=ORBIT_TIMES, positions=ORBIT_POSITIONS, velocities=ORBIT_VELOCITIES)
+
+        terrain_corrected_inc_angles = compute_terrain_corrected_incidence_angles(
+            dem_values=np.zeros((len(DEM_LAT_AXIS), len(DEM_LON_AXIS))),
+            dem_lat_axis=DEM_LAT_AXIS,
+            dem_lon_axis=DEM_LON_AXIS,
+            trajectory=orbit,
+            range_times=RANGE_TIMES,
+            azimuth_times=AZIMUTH_TIMES,
+        )
+
+        inc_angles = np.zeros_like(terrain_corrected_inc_angles)
+
+        for i in range(inc_angles.shape[0]):
+            inc_angles[i, :] = compute_incidence_angles(
+                trajectory=orbit, azimuth_time=AZIMUTH_TIMES[i], range_times=RANGE_TIMES, look_direction="RIGHT"
+            )
+
+        np.testing.assert_allclose(inc_angles, terrain_corrected_inc_angles, atol=1e-3)
 
 
 class TestGeocodeDemToSarRaster:
