@@ -22,7 +22,7 @@ def apply_denoising_correction(
     is_grd: bool,
     clipping: bool,
 ) -> npt.NDArray[np.complex64]:
-    """Apply thermal denoising vectors to ``target_area``
+    """Apply thermal denoising vectors to `target_area`
 
     Parameters
     ----------

@@ -1,14 +1,14 @@
 # SPDX-FileCopyrightText: Aresys S.r.l. <info@aresys.it>
 # SPDX-License-Identifier: MIT
 
-"""Terrain-corrected incidence and look angles computation"""
+"""Terrain-corrected incidence and look angles computation."""
 
 import numpy as np
 import numpy.typing as npt
 from perseo_core.geometry.angles import compute_incidence_angles_core
 from perseo_core.geometry.coordinates.conversions import llh2xyz
 from perseo_core.geometry.core.angles import compute_nadir_from_sensor_positions
-from perseo_core.geometry.geocoding import inverse_geocoding_monostatic
+from perseo_core.geometry.geocoding.inverse import inverse_geocoding_monostatic
 from perseo_core.geometry.navigation.trajectory import Trajectory
 from pyproj import Geod
 from scipy.interpolate import LinearNDInterpolator
@@ -34,8 +34,8 @@ def _geocode_dem_to_sar_raster(
     via inverse geocoding, giving each point an (azimuth time, range time)
     coordinate. These scattered (az, rg) points, together with their ECEF
     positions (and, optionally, terrain normals), are then interpolated with a
-    single Delaunay triangulation (``LinearNDInterpolator``) onto the regular
-    ``azimuth_times`` / ``range_times`` raster grid.
+    single Delaunay triangulation (`LinearNDInterpolator`) onto the regular
+    `azimuth_times` / `range_times` raster grid.
 
     Parameters
     ----------
@@ -63,13 +63,15 @@ def _geocode_dem_to_sar_raster(
     Returns
     -------
     tuple[npt.NDArray[np.floating], npt.NDArray[np.floating] | None]
-        ``(ground_points_raster, normal_raster)``, where ``ground_points_raster``
-        has shape ``(len(azimuth_times), len(range_times), 3)`` with ECEF
-        coordinates, and ``normal_raster`` has the same shape with unit terrain
-        normal vectors if ``terrain_normal`` is True, otherwise None.
+        `(ground_points_raster, normal_raster)`, where `ground_points_raster`
+        has shape `(len(azimuth_times), len(range_times), 3)` with ECEF
+        coordinates, and `normal_raster` has the same shape with unit terrain
+        normal vectors if `terrain_normal` is True, otherwise None.
+
     """
     if dem_values.shape != (len(dem_lat_axis), len(dem_lon_axis)):
-        raise ValueError("Mismatch between DEM and latitude/longitude axis")
+        msg = "Mismatch between DEM and latitude/longitude axis"
+        raise ValueError(msg)
 
     lat_grid, lon_grid = np.meshgrid(dem_lat_axis, dem_lon_axis, indexing="ij")
     llh = np.column_stack([np.deg2rad(lat_grid.ravel()), np.deg2rad(lon_grid.ravel()), dem_values.ravel()])
@@ -103,22 +105,29 @@ def _geocode_dem_to_sar_raster(
     return ground_points_raster, normal_raster
 
 
-def _compute_df_dh(cos_lat, sin_lat, cos_lon, sin_lon):
-    """
-    Computes the partial derivative of ECEF coordinates with respect to height (df/dh).
-    """
+def _compute_df_dh(
+    cos_lat: npt.NDArray[np.floating],
+    sin_lat: npt.NDArray[np.floating],
+    cos_lon: npt.NDArray[np.floating],
+    sin_lon: npt.NDArray[np.floating],
+) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating], npt.NDArray[np.floating]]:
+    """Compute the partial derivative of ECEF coordinates with respect to height (df/dh)."""
     x = cos_lat * cos_lon
     y = cos_lat * sin_lon
     z = sin_lat * np.ones_like(cos_lon)
     return x, y, z
 
 
-def _compute_df_dlat(cos_lat, sin_lat, cos_lon, sin_lon, height_m, M):
-    """
-    Computes the partial derivative of ECEF coordinates with respect to
-    latitude in radians (df/dlat).
-    """
-    scale = M + height_m
+def _compute_df_dlat(
+    cos_lat: npt.NDArray[np.floating],
+    sin_lat: npt.NDArray[np.floating],
+    cos_lon: npt.NDArray[np.floating],
+    sin_lon: npt.NDArray[np.floating],
+    height_m: npt.NDArray[np.floating],
+    meridian_radius: npt.NDArray[np.floating],
+) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating], npt.NDArray[np.floating]]:
+    """Compute the partial derivative of ECEF coordinates with respect to latitude in radians (df/dlat)."""
+    scale = meridian_radius + height_m
 
     x = -scale * sin_lat * cos_lon
     y = -scale * sin_lat * sin_lon
@@ -127,12 +136,15 @@ def _compute_df_dlat(cos_lat, sin_lat, cos_lon, sin_lon, height_m, M):
     return x, y, z
 
 
-def _compute_df_dlon(cos_lat, cos_lon, sin_lon, height_m, N):
-    """
-    Computes the partial derivative of ECEF coordinates with respect to
-    longitude in radians (df/dlon).
-    """
-    scale = (N + height_m) * cos_lat
+def _compute_df_dlon(
+    cos_lat: npt.NDArray[np.floating],
+    cos_lon: npt.NDArray[np.floating],
+    sin_lon: npt.NDArray[np.floating],
+    height_m: npt.NDArray[np.floating],
+    prime_vertical_radius: npt.NDArray[np.floating],
+) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating], npt.NDArray[np.floating]]:
+    """Compute the partial derivative of ECEF coordinates with respect to longitude in radians (df/dlon)."""
+    scale = (prime_vertical_radius + height_m) * cos_lat
 
     x = -scale * sin_lon
     y = scale * cos_lon
@@ -146,7 +158,7 @@ def compute_terrain_normal(
     dem_lat_axis: npt.NDArray[np.floating],
     dem_lon_axis: npt.NDArray[np.floating],
 ) -> npt.NDArray[np.floating]:
-    """Computes ECEF outward terrain unit normal vectors.
+    """Compute ECEF outward terrain unit normal vectors.
 
     Parameters
     ----------
@@ -161,12 +173,14 @@ def compute_terrain_normal(
     -------
     npt.NDArray[np.floating]
         Array of shape (N_lat, N_lon, 3) with unit normal components (nx, ny, nz).
+
     """
     if not np.all(np.diff(dem_lon_axis) > 0):
         msg = "dem_lon_axis must be monotonic increasing. If it crosses the antimeridian, unwrap it first"
         raise ValueError(msg)
     if not (np.all(np.diff(dem_lat_axis) > 0) or np.all(np.diff(dem_lat_axis) < 0)):
-        raise ValueError("dem_lat_axis must be strictly monotonic")
+        msg = "dem_lat_axis must be strictly monotonic"
+        raise ValueError(msg)
     if dem_values.shape != (len(dem_lat_axis), len(dem_lon_axis)):
         msg = (
             f"dem_values shape {dem_values.shape} does not match "
@@ -185,33 +199,33 @@ def compute_terrain_normal(
     cos_lon = np.cos(lon_rad)[None, :]
     sin_lon = np.sin(lon_rad)[None, :]
 
-    denom_M = (1.0 - WGS84.es * sin_lat[:, 0] ** 2) ** 1.5
-    M = (WGS84.a * (1.0 - WGS84.es) / denom_M)[:, None]
+    denom_meridian_radius = (1.0 - WGS84.es * sin_lat[:, 0] ** 2) ** 1.5
+    meridian_radius = (WGS84.a * (1.0 - WGS84.es) / denom_meridian_radius)[:, None]
 
-    denom_N = np.sqrt(1.0 - WGS84.es * sin_lat[:, 0] ** 2)
-    N = (WGS84.a / denom_N)[:, None]
+    denom_prime_vertical_radius = np.sqrt(1.0 - WGS84.es * sin_lat[:, 0] ** 2)
+    prime_vertical_radius = (WGS84.a / denom_prime_vertical_radius)[:, None]
 
     dh_x, dh_y, dh_z = _compute_df_dh(cos_lat, sin_lat, cos_lon, sin_lon)
-    dlat_x, dlat_y, dlat_z = _compute_df_dlat(cos_lat, sin_lat, cos_lon, sin_lon, dem_values, M)
-    dlon_x, dlon_y, dlon_z = _compute_df_dlon(cos_lat, cos_lon, sin_lon, dem_values, N)
+    dlat_x, dlat_y, dlat_z = _compute_df_dlat(cos_lat, sin_lat, cos_lon, sin_lon, dem_values, meridian_radius)
+    dlon_x, dlon_y, dlon_z = _compute_df_dlon(cos_lat, cos_lon, sin_lon, dem_values, prime_vertical_radius)
 
-    dR_dlat_x = dlat_x + dh_x * dh_dlat
-    dR_dlat_y = dlat_y + dh_y * dh_dlat
-    dR_dlat_z = dlat_z + dh_z * dh_dlat
+    dr_dlat_x = dlat_x + dh_x * dh_dlat
+    dr_dlat_y = dlat_y + dh_y * dh_dlat
+    dr_dlat_z = dlat_z + dh_z * dh_dlat
 
-    dR_dlon_x = dlon_x + dh_x * dh_dlon
-    dR_dlon_y = dlon_y + dh_y * dh_dlon
-    dR_dlon_z = dlon_z + dh_z * dh_dlon
+    dr_dlon_x = dlon_x + dh_x * dh_dlon
+    dr_dlon_y = dlon_y + dh_y * dh_dlon
+    dr_dlon_z = dlon_z + dh_z * dh_dlon
 
     # cross product component-wise
-    nx_raw = dR_dlon_y * dR_dlat_z - dR_dlon_z * dR_dlat_y
-    ny_raw = dR_dlon_z * dR_dlat_x - dR_dlon_x * dR_dlat_z
-    nz_raw = dR_dlon_x * dR_dlat_y - dR_dlon_y * dR_dlat_x
+    nx_raw = dr_dlon_y * dr_dlat_z - dr_dlon_z * dr_dlat_y
+    ny_raw = dr_dlon_z * dr_dlat_x - dr_dlon_x * dr_dlat_z
+    nz_raw = dr_dlon_x * dr_dlat_y - dr_dlon_y * dr_dlat_x
 
     norm = np.sqrt(nx_raw**2 + ny_raw**2 + nz_raw**2)
     norm = np.where(norm > np.finfo(float).eps, norm, np.nan)
 
-    normal = np.stack(
+    return np.stack(
         [
             nx_raw / norm,
             ny_raw / norm,
@@ -219,7 +233,6 @@ def compute_terrain_normal(
         ],
         axis=-1,
     )
-    return normal
 
 
 def compute_terrain_corrected_incidence_angles(
@@ -234,14 +247,14 @@ def compute_terrain_corrected_incidence_angles(
     doppler_frequency: float = 0.0,
     wavelength: float = 1.0,
 ) -> npt.NDArray[np.floating]:
-    """Compute incidence angles taking into account terrain elevation and slope
+    """Compute incidence angles taking into account terrain elevation and slope.
 
     Parameters
     ----------
     dem_values : npt.NDArray[np.floating]
         DEM heights of shape (N_lat, N_lon). Area covered by DEM
         must correspond to scene area defined by range and azimuth times
-        (``load_dem_from_sar_times`` can be used for this purpose).
+        (`load_dem_from_sar_times` can be used for this purpose).
     dem_lat_axis : npt.NDArray[np.floating]
         Latitude axis in degrees of shape (N_lat,).
     dem_lon_axis : npt.NDArray[np.floating]
@@ -263,6 +276,7 @@ def compute_terrain_corrected_incidence_angles(
     -------
     npt.NDArray[np.floating]
         incidence angles with shape (len(azimuth_times), len(range_times))
+
     """
     ground_points, normals = _geocode_dem_to_sar_raster(
         dem_values,
@@ -303,15 +317,14 @@ def compute_terrain_corrected_look_angles(
     doppler_frequency: float = 0.0,
     wavelength: float = 1.0,
 ) -> npt.NDArray[np.floating]:
-    """Compute look angles for each pixel of the raster defined by ``azimuth_times`` and ``range_times`` axis,
-    taking DEM into account.
+    """Compute look angles for each pixel of the raster defined azimuth and range time axis, taking DEM into account.
 
     Parameters
     ----------
     dem_values : npt.NDArray[np.floating]
         DEM heights of shape (N_lat, N_lon). Area covered by DEM
         must correspond to scene area defined by range and azimuth times
-        (``load_dem_from_sar_times`` can be used for this purpose).
+        (`load_dem_from_sar_times` can be used for this purpose).
     dem_lat_axis : npt.NDArray[np.floating]
         Latitude axis in degrees of shape (N_lat,).
     dem_lon_axis : npt.NDArray[np.floating]
@@ -333,6 +346,7 @@ def compute_terrain_corrected_look_angles(
     -------
     npt.NDArray[np.floating]
         look angles with shape (len(azimuth_times), len(range_times))
+
     """
     ground_points, _ = _geocode_dem_to_sar_raster(
         dem_values=dem_values,
@@ -358,7 +372,7 @@ def compute_terrain_corrected_look_angles(
 def _look_angles_from_ecef_positions(
     sensor_pos_ecef: npt.NDArray[np.floating], ground_pos_ecef: npt.NDArray[np.floating]
 ) -> npt.NDArray[np.floating]:
-    """Compute look angles from sensor and ground ECEF positions
+    """Compute look angles from sensor and ground ECEF positions.
 
     Parameters
     ----------
@@ -374,16 +388,20 @@ def _look_angles_from_ecef_positions(
     npt.NDArray[np.floating]
         Look angles with shape (L, M) in radians, where L is the number of sensor positions and M is the
         number of ground points per sensor position.
+
     """
     if sensor_pos_ecef.ndim != 2 or sensor_pos_ecef.shape[1] != 3:
-        raise ValueError(f"sensor_pos_ecef must have shape (L, 3), got {sensor_pos_ecef.shape}")
+        msg = f"sensor_pos_ecef must have shape (L, 3), got {sensor_pos_ecef.shape}"
+        raise ValueError(msg)
     if ground_pos_ecef.ndim != 3 or ground_pos_ecef.shape[2] != 3:
-        raise ValueError(f"ground_pos_ecef must have shape (L, M, 3), got {ground_pos_ecef.shape}")
+        msg = f"ground_pos_ecef must have shape (L, M, 3), got {ground_pos_ecef.shape}"
+        raise ValueError(msg)
     if sensor_pos_ecef.shape[0] != ground_pos_ecef.shape[0]:
-        raise ValueError(
+        msg = (
             f"Azimuth dimension mismatch (L). Sensor has L={sensor_pos_ecef.shape[0]}, "
             f"but Ground has L={ground_pos_ecef.shape[0]}."
         )
+        raise ValueError(msg)
 
     nadir = compute_nadir_from_sensor_positions(sensor_positions=sensor_pos_ecef)
     nadir_hat = nadir / np.linalg.norm(nadir, axis=-1, keepdims=True)
@@ -391,6 +409,4 @@ def _look_angles_from_ecef_positions(
     los = ground_pos_ecef - sensor_pos_ecef[:, np.newaxis, :]
     los_hat = los / np.linalg.norm(los, axis=-1, keepdims=True)
 
-    angles = np.arccos(np.clip(np.einsum("lmk,lk->lm", los_hat, nadir_hat), -1.0, 1.0))
-
-    return angles
+    return np.arccos(np.clip(np.einsum("lmk,lk->lm", los_hat, nadir_hat), -1.0, 1.0))

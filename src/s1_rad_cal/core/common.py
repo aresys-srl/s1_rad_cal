@@ -48,7 +48,7 @@ def _compute_footprint_from_times(
     Returns
     -------
     tuple[float, float, float, float]
-        footprint as (``lat_start``, ``lon_start``, ``lat_size``, ``lon_size``) expressed in degrees
+        footprint as (`lat_start`, `lon_start`, `lat_size`, `lon_size`) expressed in degrees
     """
     footprint_ecef = direct_geocoding_monostatic(
         sensor_positions=trajectory.position(
