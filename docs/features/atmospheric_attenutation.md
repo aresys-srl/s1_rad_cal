@@ -46,13 +46,13 @@ For Sentinel-1 acquisitions, the path length is equal to two times the slant ran
 
 ## Implementation
 
-In order to compute the atmospheric attenuation, ``s1-rad-cal`` makes use of the [ITU-Rpy package](https://itu-rpy.readthedocs.io/en/latest/index.html), that provides a python implementation
-of the [ITU-R Recommendation P.676](https://www.itu.int/rec/R-REC-p.676/en). In particular, the user can choose whether to use the ``approx`` or ``exact`` method 
-in the ``s1-rad-cal`` configuration. If ``approx`` the method described in Annex 2 of the [ITU-R Recommendation P.676](https://www.itu.int/rec/R-REC-p.676/en) is used, otherwise the method
+In order to compute the atmospheric attenuation, `s1-rad-cal` makes use of the [ITU-Rpy package](https://itu-rpy.readthedocs.io/en/latest/index.html), that provides a python implementation
+of the [ITU-R Recommendation P.676](https://www.itu.int/rec/R-REC-p.676/en). In particular, the user can choose whether to use the `approx` or `exact` method 
+in the `s1-rad-cal` configuration. If `approx` the method described in Annex 2 of the [ITU-R Recommendation P.676](https://www.itu.int/rec/R-REC-p.676/en) is used, otherwise the method
 described in Annex 1 is used.
 
 ## Weather Dataset
 
-As mentioned above this model requires as input values for temperature, pressure, and water vapour density. ``s1-rad-cal`` provides two [CLI utilities](CLI.md#cli-utilities) to download weather datasets
+As mentioned above this model requires as input values for temperature, pressure, and water vapour density. `s1-rad-cal` provides two [CLI utilities](CLI.md#cli-utilities) to download weather datasets
 from the [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/) in the format required by this tool. In order to use these functionalities, the user must first [setup the
 CDS API key](https://cds.climate.copernicus.eu/how-to-api).

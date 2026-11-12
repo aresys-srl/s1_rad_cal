@@ -5,12 +5,12 @@
 [![rad-cal CI](https://github.com/aresys-srl/s1_rad_cal/actions/workflows/rad-cal.yml/badge.svg)](https://github.com/aresys-srl/s1_rad_cal/actions/workflows/rad-cal.yml)
 [![PyPI version](https://img.shields.io/pypi/v/s1_rad_cal)](https://pypi.org/project/s1-rad-cal/)
 
-``s1-rad-cal`` is the Aresys' radiometric re-calibration tool for Sentinel1 L1 SLC and GRD products:
+`s1-rad-cal` is the Aresys' radiometric re-calibration tool for Sentinel1 L1 SLC and GRD products:
 it offers a set of radiometric corrections with the aim of improving consistency and accuracy of radar backscatter measurements.
 
 ## Installation
 
-This package can be installed using ``pip``:
+This package can be installed using `pip`:
 
 ```
 pip install s1-rad-cal
@@ -18,7 +18,7 @@ pip install s1-rad-cal
 
 ## Quick Start
 
-``s1-rad-cal`` command line can be invoked in the terminal session as:
+`s1-rad-cal` command line can be invoked in the terminal session as:
 
 ```
 s1-rad-cal process [--input/-in] [--output/-out] [--config/-c] [--help]

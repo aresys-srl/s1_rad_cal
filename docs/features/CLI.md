@@ -9,14 +9,14 @@ tags:
 
 # Command Line Interface (CLI)
 
-A command line interface has been developed to be used directly from a shell prompt to access ``s1-rad-cal`` tool functionalities with an
+A command line interface has been developed to be used directly from a shell prompt to access `s1-rad-cal` tool functionalities with an
 easy to use approach.
 
-The main command line tool that can be accessed using the ``s1-rad-cal`` command in your favorite shell.
+The main command line tool that can be accessed using the `s1-rad-cal` command in your favorite shell.
 
 ## Main CLI
 
-``s1-rad-cal`` tool command line can be invoked in the terminal session as:
+`s1-rad-cal` tool command line can be invoked in the terminal session as:
 
 ``` bash title="CLI Entry Point"
 s1-rad-cal [--help]
@@ -32,7 +32,7 @@ Input file .json and output folder must be provided as paths, configuration is o
 if not provided, the default configuration will be used.
 
 ## Input file .json
-In order to run ``s1-rad-cal`` user must provide an input file in .json format; the structure of such file is shown here:
+In order to run `s1-rad-cal` user must provide an input file in .json format; the structure of such file is shown here:
 
 ``` json title="Input file"
 {
@@ -79,7 +79,7 @@ clipping = true
 ext_noise_vector_folder = "optional/path/to/folder/containing/noise/files" # (4)!
 ```
 
-1.  Optional, the valid radiometric quantities are ``beta``, ``sigma``, ``gamma``. By default ``beta``
+1.  Optional, the valid radiometric quantities are `beta`, `sigma`, `gamma`. By default `beta`
 
 2.  Provide the path to dem tiles to use the local incidence angle for radiometric quantity conversion, otherwise remove to use the incidence angle computed on the inflated WGS84 Earth geoid
 
@@ -92,16 +92,16 @@ ext_noise_vector_folder = "optional/path/to/folder/containing/noise/files" # (4)
 
 !!! Warning
 
-    If ``dem`` path is provided the software expects the raw binary tile files (e.g. `45N015E.GETASSE30`) to be available directly inside the folder
+    If `dem` path is provided the software expects the raw binary tile files (e.g. `45N015E.GETASSE30`) to be available directly inside the folder
 
 !!! Warning
 
-    If ``ext_noise_vector_folder`` is provided, the folder must contain one xml file for each channel, having the same name and same internal format of the standard
+    If `ext_noise_vector_folder` is provided, the folder must contain one xml file for each channel, having the same name and same internal format of the standard
     calibration noise xml files that are present in the Sentinel-1 product.
 
 ## CLI Utilities
 
-You can download weather dataset in the format required by ``s1-rad-cal`` using the following CLI utilities.
+You can download weather dataset in the format required by `s1-rad-cal` using the following CLI utilities.
 
 ``` bash title="Download weather dataset from era5 single level hourly data"
 s1-rad-cal download-era5 [--north][--west][--south][--east][--time][--output][--help]
@@ -124,9 +124,9 @@ that provided a product path downloads the corresponding weather dataset so that
 
 !!! Warning
 
-    The atmospheric attenuation correction implemented in ``s1-rad-cal`` requires water vapour density data, which is not directly available in ERA5 datasets.
+    The atmospheric attenuation correction implemented in `s1-rad-cal` requires water vapour density data, which is not directly available in ERA5 datasets.
     Therefore, water vapour density is derived from the dewpoint temperature using the Magnus formula. As a result, a compatible dataset cannot be downloaded directly
-    from the Climate Data Store (CDS). Use the CLI functionalities provided by ``s1-rad-cal`` to retrieve and process the required ERA5 data and derive water vapour density.
+    from the Climate Data Store (CDS). Use the CLI functionalities provided by `s1-rad-cal` to retrieve and process the required ERA5 data and derive water vapour density.
 
 !!! Tip
 

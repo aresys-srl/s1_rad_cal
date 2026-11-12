@@ -7,7 +7,7 @@ tags:
 ---
 
 # Minimal Tutorial
-``s1-rad-cal`` can be used in a python script. A minimal tutorial can be found here:
+`s1-rad-cal` can be used in a python script. A minimal tutorial can be found here:
 
 ```py
 from s1_rad_cal.config import Config
@@ -24,10 +24,10 @@ if __name__ == "__main__":
 
 ```
 
-``s1-rad-cal`` can also be used from [command line](features\CLI.md).
+`s1-rad-cal` can also be used from [command line](features\CLI.md).
 
 !!! warning "Requirement"
 
-    In order to run ``s1-rad-cal``, user must provide a local collection of ``AUX_PP1`` files. 
+    In order to run `s1-rad-cal`, user must provide a local collection of `AUX_PP1` files. 
     See [processing gain correction](features/corrections.md#processing-gain) for more information.
 

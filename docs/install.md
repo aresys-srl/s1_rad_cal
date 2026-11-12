@@ -13,7 +13,7 @@ tags:
 
     This package requires a Python version **equal or higher than 3.11**.
 
-To install this package using ``pip``:
+To install this package using `pip`:
 
 ```bash title="install with pip"
 pip install s1-rad-cal
