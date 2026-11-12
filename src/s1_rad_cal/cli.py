@@ -46,10 +46,10 @@ def process(
 
 @app.command("download-era5")
 def download_era5(
-    north: Annotated[float, typer.Option("--north", help="Northern limit in degrees (-90 to 90).")],
-    west: Annotated[float, typer.Option("--west", help="Western limit in degrees (-180 to 180).")],
-    south: Annotated[float, typer.Option("--south", help="Southern limit in degrees (-90 to 90).")],
-    east: Annotated[float, typer.Option("--east", help="Eastern limit in degrees (-180 to 180).")],
+    north: Annotated[float, typer.Option("--north", "-n", help="Northern limit in degrees (-90 to 90).")],
+    west: Annotated[float, typer.Option("--west", "-w", help="Western limit in degrees (-180 to 180).")],
+    south: Annotated[float, typer.Option("--south", "-s", help="Southern limit in degrees (-90 to 90).")],
+    east: Annotated[float, typer.Option("--east", "-e", help="Eastern limit in degrees (-180 to 180).")],
     time: Annotated[
         str,
         typer.Option("--time", "-t", help="UTC time, e.g. '2024-05-17 06:30:00.000'. Only the hour is used by ERA5."),

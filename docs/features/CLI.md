@@ -104,7 +104,7 @@ ext_noise_vector_folder = "optional/path/to/folder/containing/noise/files" # (4)
 You can download weather dataset in the format required by `s1-rad-cal` using the following CLI utilities.
 
 ``` bash title="Download weather dataset from era5 single level hourly data"
-s1-rad-cal download-era5 [--north][--west][--south][--east][--time][--output][--help]
+s1-rad-cal download-era5 [--north/-n][--west/-w][--south/-s][--east/-e][--time/-t][--output/-out][--help]
 ```
 
 Provide a bounding box in latitude and longitude (deg), a UTC time (e.g. '2024-05-17 06:30:00.000', only the hour is used by ERA5), and the output folder where
@@ -113,20 +113,18 @@ the dataset is saved.
 For convenience, you can also use the following command:
 
 ``` bash title="Download weather dataset from era5 single level hourly data"
-s1-rad-cal download-era5-from-product [--product][--output][--help]
+s1-rad-cal download-era5-from-product [--product/-p][--output/-out][--help]
 ```
 
 that provided a product path downloads the corresponding weather dataset so that you do not need to know the bounding box and the acquisition time a-priori.
 
+The atmospheric attenuation correction implemented in `s1-rad-cal` requires water vapour density data, which is not directly available in ERA5 datasets.
+Therefore, water vapour density is derived from the dewpoint temperature using the Magnus formula. As a result, a compatible dataset cannot be downloaded directly
+from the Climate Data Store (CDS). Use the CLI functionalities provided by `s1-rad-cal` to retrieve and process the required ERA5 data and derive water vapour density.
+
 !!! Warning
 
     In order to use these functionalities, you must first [setup the CDS API key](https://cds.climate.copernicus.eu/how-to-api).
-
-!!! Warning
-
-    The atmospheric attenuation correction implemented in `s1-rad-cal` requires water vapour density data, which is not directly available in ERA5 datasets.
-    Therefore, water vapour density is derived from the dewpoint temperature using the Magnus formula. As a result, a compatible dataset cannot be downloaded directly
-    from the Climate Data Store (CDS). Use the CLI functionalities provided by `s1-rad-cal` to retrieve and process the required ERA5 data and derive water vapour density.
 
 !!! Tip
 
