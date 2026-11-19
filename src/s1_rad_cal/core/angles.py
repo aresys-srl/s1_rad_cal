@@ -40,7 +40,7 @@ def _geocode_dem_to_sar_raster(
     Parameters
     ----------
     dem_values : npt.NDArray[np.floating]
-        DEM heights of shape (N_lat, N_lon).
+        DEM ellipsoidal heights of shape (N_lat, N_lon).
     dem_lat_axis : npt.NDArray[np.floating]
         Latitude axis in degrees of shape (N_lat,).
     dem_lon_axis : npt.NDArray[np.floating]
@@ -163,7 +163,7 @@ def compute_terrain_normal(
     Parameters
     ----------
     dem_values : npt.NDArray[np.floating]
-        DEM heights of shape (N_lat, N_lon).
+        DEM ellipsoidal heights of shape (N_lat, N_lon).
     dem_lat_axis : npt.NDArray[np.floating]
         Latitude axis in degrees of shape (N_lat,).
     dem_lon_axis : npt.NDArray[np.floating]
@@ -252,9 +252,8 @@ def compute_terrain_corrected_incidence_angles(
     Parameters
     ----------
     dem_values : npt.NDArray[np.floating]
-        DEM heights of shape (N_lat, N_lon). Area covered by DEM
+        DEM ellipsoidal heights of shape (N_lat, N_lon). Area covered by DEM
         must correspond to scene area defined by range and azimuth times
-        (`load_dem_from_sar_times` can be used for this purpose).
     dem_lat_axis : npt.NDArray[np.floating]
         Latitude axis in degrees of shape (N_lat,).
     dem_lon_axis : npt.NDArray[np.floating]
@@ -268,7 +267,7 @@ def compute_terrain_corrected_incidence_angles(
     radians : bool, optional
         output angles are expressed in radians if this flag is set to True (default), if False are expressed in degrees
     doppler_frequency : float, optional
-        doppler frequency centroid values to perform the inverse geocoding, by default 0.0
+        doppler frequency centroid value to perform the inverse geocoding, by default 0.0
     wavelength : float, optional
         carrier signal wavelength, by default 1.0
 
@@ -322,9 +321,8 @@ def compute_terrain_corrected_look_angles(
     Parameters
     ----------
     dem_values : npt.NDArray[np.floating]
-        DEM heights of shape (N_lat, N_lon). Area covered by DEM
+        DEM ellipsoidal heights of shape (N_lat, N_lon). Area covered by DEM
         must correspond to scene area defined by range and azimuth times
-        (`load_dem_from_sar_times` can be used for this purpose).
     dem_lat_axis : npt.NDArray[np.floating]
         Latitude axis in degrees of shape (N_lat,).
     dem_lon_axis : npt.NDArray[np.floating]
@@ -338,7 +336,7 @@ def compute_terrain_corrected_look_angles(
     radians : bool, optional
         output angles are expressed in radians if this flag is set to True (default), if False are expressed in degrees
     doppler_frequency : float, optional
-        doppler frequency centroid values to perform the inverse geocoding, by default 0.0
+        doppler frequency centroid value to perform the inverse geocoding, by default 0.0
     wavelength : float, optional
         carrier signal wavelength, by default 1.
 
