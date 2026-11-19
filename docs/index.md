@@ -31,8 +31,14 @@ This tool can compensate for attenuation by atmospheric gases by applying the [R
 ## Local Incidence Angle
 
 This tool, if provided with a digital elevation model (DEM), can perform a terrain-based radiometric quantity conversion: it can indeed compute the local incidence angle $\theta_{LIN}$ -i.e. the angle 
-between the radar beam and the line perpendicular to the local terrain surface- by projecting the DEM data into SAR space. While accounting for local terrain surface, effects such as *shadowing* or *layover* are neglected, so this radiometric conversion does not aim to substitute proper terrain
+between the radar beam and the line perpendicular to the local terrain surface- by projecting the DEM data into SAR space. While accounting for local terrain surface, effects such as *shadowing*, *layover*, and *foreshortening* are neglected, so this radiometric conversion does not aim to substitute proper terrain
 flattening as mentioned in  *Flattening Gamma: Radiometric Terrain Correction for SAR Imagery* ([Small, 2011](#small2011)).
+
+<figure>
+  <img src="../assets/angles_with_dem.png" alt="Comparison between angles computed with and without a DEM">
+  <figcaption>Incidence and look angles computed with and without the GETASSE30 DEM, for an area over Northern Italy</figcaption>
+</figure>
+
 
 ## References
 
