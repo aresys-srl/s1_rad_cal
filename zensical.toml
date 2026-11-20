@@ -10,7 +10,9 @@
 site_name = "Radiometric Re-Calibration"
 site_description = "Rad-Cal Tool Documentation"
 site_author = "Aresys s.r.l."
-site_url = ""
+repo_url = "https://github.com/aresys-srl/s1-rad-cal"
+repo_name = "aresys/s1-rad-cal"
+site_url = "https://opensource.aresys.it/s1-rad-cal/"
 copyright = """
 Copyright &copy; 2026-present Aresys s.r.l.
 """
@@ -247,6 +249,11 @@ members_order = "source"
 # ----------------------------------------------------------------------------
 # The "extra" section contains miscellaneous settings.
 # ----------------------------------------------------------------------------
+[project.extra]
+# Link back to the Aresys Open Source landing page, shown in the header.
+open_source_url = "https://opensource.aresys.it/"
+open_source_label = "Aresys Open Source"
+
 [[project.extra.social]]
 icon = "fontawesome/brands/github"
 link = "https://github.com/aresys-srl"
