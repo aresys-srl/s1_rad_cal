@@ -56,3 +56,9 @@ described in Annex 1 is used.
 As mentioned above this model requires as input values for temperature, pressure, and water vapour density. `s1-rad-cal` provides two [CLI utilities](CLI.md#cli-utilities) to download weather datasets
 from the [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/) in the format required by this tool. In order to use these functionalities, the user must first [setup the
 CDS API key](https://cds.climate.copernicus.eu/how-to-api).
+
+
+<figure>
+  <img src="../assets/atmospheric_attenuation.png" alt="Atmospheric attenuation">
+  <figcaption>Pressure, water vapour density, temperature, and resulting atmospheric attenuation over an area in Southern Italy. Atmospheric attenuation is then projected onto SAR space and interpolated on range and azimuth time axis.</figcaption>
+</figure>
